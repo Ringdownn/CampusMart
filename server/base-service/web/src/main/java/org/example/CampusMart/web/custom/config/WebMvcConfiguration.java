@@ -9,9 +9,6 @@ import org.springframework.format.FormatterRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Configuration
 public class WebMvcConfiguration implements WebMvcConfigurer {
 
@@ -35,7 +32,12 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
                         "/app/register",
                         "/app/register/**",
                         "/app/login",
-                        "/app/login/**"
+                        "/app/login/**",
+                        "/app/goods/page",
+                        "/app/goods/search",
+                        "/app/goods/selectById",
+                        "/app/messages/list",
+                        "/app/messages/recent"
 
                 );
     }

@@ -55,8 +55,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                             .object(filename)
                             .contentType(file.getContentType())
                             .build());
-            String url = String.join("/", minioProperties.getEndpoint(), minioProperties.getBucketName(), filename);
-            return url;
+            return filename;
         }catch(Exception e){
             e.printStackTrace();
             throw new CampusMartException(ResultCodeEnum.DATA_ERROR);

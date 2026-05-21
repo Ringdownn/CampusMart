@@ -10,7 +10,8 @@ import java.util.Date;
 
 public class JwtUtil {
 
-    private static SecretKey secretKey = Keys.hmacShaKeyFor("cX6NdmHd6tk3pyexe5tWjvKcZtnPxztv".getBytes());
+    private static final String DEFAULT_SECRET = "cX6NdmHd6tk3pyexe5tWjvKcZtnPxztv";
+    private static SecretKey secretKey = Keys.hmacShaKeyFor(getSecret().getBytes());
 
     public static String createToken(Long userId, String username) {
         String jwt = Jwts.builder().
@@ -42,5 +43,17 @@ public class JwtUtil {
 
     public static void main(String[] args) {
         System.out.println(createToken(8L, "13418049114"));
+    }
+
+    private static String getSecret() {
+        String envSecret = System.getenv("JWT_SECRET");
+        if (envSecret != null && !envSecret.isBlank()) {
+            return envSecret;
+        }
+        String propertySecret = System.getProperty("jwt.secret");
+        if (propertySecret != null && !propertySecret.isBlank()) {
+            return propertySecret;
+        }
+        return DEFAULT_SECRET;
     }
 }

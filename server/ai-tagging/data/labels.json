@@ -1,0 +1,23 @@
+[
+    "red", "blue", "green", "black", "white", "yellow", "pink", "purple", "orange", "brown",
+    "gray", "gold", "silver", "beige", "navy", "teal", "burgundy", "coral", "olive", "cream",
+    "dress", "shirt", "pants", "jeans", "jacket", "coat", "skirt", "sweater", "hoodie", "blouse",
+    "suit", "shorts", "vest", "cardigan", "t-shirt", "polo shirt", "leggings", "saree", "kurti", "jeans",
+    "leather", "cotton", "silk", "wool", "polyester", "linen", "denim", "velvet", "satin", "cashmere",
+    "fleece", "nylon", "spandex", "rayon", "chiffon", "tweed", "corduroy", "suede", "fur", "sequin",
+    "casual", "formal", "business", "party", "wedding", "beach", "sport", "vintage", "modern", "classic",
+    "luxury", "budget", "minimalist", "bohemian", "rock", "preppy", "streetwear", "retro", "chic", "elegant",
+    "summer", "winter", "spring", "autumn", "all-season", "rainy", "hot", "cold", "mild", "windy",
+    "slim", "regular", "loose", "relaxed", "skinny", "oversized", "fitted", "petite", "plus-size", "tall",
+    "small", "medium", "large", "extra large", "xs", "s", "m", "l", "xl", "xxl",
+    "men", "women", "unisex", "boys", "girls", "kids", "baby", "adult", "teen", "elderly",
+    "shoes", "sneakers", "boots", "heels", "sandals", " flats", "loafers", "oxfords", "slippers", "pumps",
+    "bag", "purse", "handbag", "backpack", "wallet", "clutch", "tote", "shoulder bag", "crossbody", "briefcase",
+    "watch", "jewelry", "necklace", "bracelet", "ring", "earrings", "brooch", "pendant", "chain", "anklet",
+    "hat", "cap", "scarf", "gloves", "belt", "sunglasses", "tie", "bow tie", "pocket square", "cufflinks",
+    "electronics", "phone", "laptop", "tablet", "camera", "headphones", "speaker", "smartwatch", "charger", "cable",
+    "furniture", "sofa", "chair", "table", "desk", "bed", "cabinet", "shelf", "lamp", "rug",
+    "home", "kitchen", "bathroom", "bedroom", "living room", "office", "garden", "outdoor", "indoor", "decor",
+    "toy", "game", "puzzle", "book", "music", "instrument", "art", "craft", "sport", "fitness",
+    "food", "snack", "drink", "grocery", "organic", "healthy", "fresh", "frozen", "canned", "packed"
+]

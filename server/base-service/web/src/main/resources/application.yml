@@ -1,24 +1,40 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8081}
 
 spring:
+  application:
+    name: base-service
+  config:
+    import: optional:nacos:${spring.application.name}.yaml
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
-    url: jdbc:mysql://127.0.0.1:3306/campusmart?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=GMT%2b8
-    username: root
-    password: Lsk200508
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/campusmart?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=GMT%2b8}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:root}
     hikari:
-      connection-test-query: SELECT 1 # 自动检测连接
-      connection-timeout: 60000 #数据库连接超时时间,默认30秒
-      idle-timeout: 500000 #空闲连接存活最大时间，默认600000（10分钟）
-      max-lifetime: 540000 #此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
-      maximum-pool-size: 12 #连接池最大连接数，默认是10
-      minimum-idle: 10 #最小空闲连接数量
-      pool-name: SPHHikariPool # 连接池名称
+      connection-test-query: SELECT 1
+      connection-timeout: 60000
+      idle-timeout: 500000
+      max-lifetime: 540000
+      maximum-pool-size: 12
+      minimum-idle: 10
+      pool-name: SPHHikariPool
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 20MB
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:campusmart}
+      config:
+        enabled: false
 
 mybatis-plus:
   configuration:
@@ -30,9 +46,7 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 minio:
-  endpoint: http://192.168.237.231:9000
-  access-key: minioadmin
-  secret-key: minioadmin
-  bucket-name: lease
-
-
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket-name: ${MINIO_BUCKET_NAME:campusmart}

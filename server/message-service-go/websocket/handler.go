@@ -35,6 +35,10 @@ func NewHTTPHandler(h *Hub, repo MessageWriter, logger *log.Logger) http.Handler
 			http.Error(w, "invalid userId", http.StatusBadRequest)
 			return
 		}
+		if !isForwardedUserAllowed(r, userID) {
+			http.Error(w, "userId does not match token", http.StatusForbidden)
+			return
+		}
 
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -128,4 +132,15 @@ func parseLongQueryParam(r *http.Request, name string) (int64, bool) {
 		return 0, false
 	}
 	return n, true
+}
+
+func isForwardedUserAllowed(r *http.Request, queryUserID int64) bool {
+	forwardedUserID := strings.TrimSpace(r.Header.Get("X-User-Id"))
+	if forwardedUserID == "" {
+		// Direct local connections remain compatible; gateway-authenticated
+		// connections always carry X-User-Id.
+		return true
+	}
+	n, err := strconv.ParseInt(forwardedUserID, 10, 64)
+	return err == nil && n == queryUserID
 }

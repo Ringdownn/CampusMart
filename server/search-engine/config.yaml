@@ -1,0 +1,19 @@
+#监听地址
+addr: 0.0.0.0:5678
+#数据目录
+data: ./data
+debag: false
+#词典目录
+dictionary: ./data/dictionary.txt
+# 数据库关闭超时时间
+timeout: 600
+# 分片数量
+shard: 10
+# 分片缓冲数量
+bufferNum: 1000
+
+#Redis配置
+redis:
+  addr: redis:6379
+  password: ""
+  DB: 0

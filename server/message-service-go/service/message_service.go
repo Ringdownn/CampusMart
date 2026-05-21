@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"log"
+	"strings"
 
 	"campusmart/message-service-go/model"
 
@@ -9,11 +11,29 @@ import (
 )
 
 type MessageService struct {
-	db *gorm.DB
+	db            *gorm.DB
+	minioEndpoint string
+	minioBucket   string
+	logger        *log.Logger
 }
 
-func NewMessageService(db *gorm.DB) *MessageService {
-	return &MessageService{db: db}
+func NewMessageService(db *gorm.DB, minioEndpoint, minioBucket string, logger *log.Logger) *MessageService {
+	return &MessageService{
+		db:            db,
+		minioEndpoint: minioEndpoint,
+		minioBucket:   minioBucket,
+		logger:        logger,
+	}
+}
+
+func (s *MessageService) buildAvatarUrl(filename string) string {
+	if filename == "" {
+		return ""
+	}
+	if strings.HasPrefix(filename, "http://") || strings.HasPrefix(filename, "https://") {
+		return filename
+	}
+	return s.minioEndpoint + "/" + s.minioBucket + "/" + filename
 }
 
 func (s *MessageService) ListByUsers(ctx context.Context, senderID, receiverID int64) ([]model.MessageVo, error) {
@@ -31,10 +51,10 @@ func (s *MessageService) ListByUsers(ctx context.Context, senderID, receiverID i
 			MessageID:         r.MessageID,
 			SenderID:          r.SenderID,
 			SenderNickname:    "",
-			SenderAvatarURL:   "",
+			SenderAvatarURL:   s.buildAvatarUrl(""),
 			ReceiverID:        r.ReceiverID,
 			ReceiverNickname:  "",
-			ReceiverAvatarURL: "",
+			ReceiverAvatarURL: s.buildAvatarUrl(""),
 			MessageContent:    r.MessageContent,
 			SendTime:          r.SendTime.UnixMilli(),
 		})
@@ -86,7 +106,7 @@ func (s *MessageService) RecentChats(ctx context.Context, userID int64) ([]model
 		out = append(out, model.RecentChatVo{
 			OtherNickname:      r.OtherUserNickname,
 			OtherID:            int64ToString(r.OtherUserID),
-			OtherAvatarURL:     r.OtherUserAvatar,
+			OtherAvatarURL:     s.buildAvatarUrl(r.OtherUserAvatar),
 			LastestMessage:     r.LastMessage,
 			LastestMessageTime: r.LastMessageTime,
 		})

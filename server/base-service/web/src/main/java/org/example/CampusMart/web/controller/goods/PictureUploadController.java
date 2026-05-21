@@ -6,6 +6,7 @@ import io.minio.errors.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.example.CampusMart.common.result.Result;
+import org.example.CampusMart.feign.SearchEngineService;
 import org.example.CampusMart.model.entity.Picture;
 import org.example.CampusMart.model.entity.User;
 import org.example.CampusMart.web.service.PictureService;
@@ -17,11 +18,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-
-
 @Tag(name = "文件管理")
 @RequestMapping("/app/goods/file")
 @RestController
@@ -32,6 +28,9 @@ public class PictureUploadController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private SearchEngineService searchEngineService;
 
     @Operation(summary = "上传商品图片")
     @PostMapping("uploadGoodsPicture")
@@ -47,6 +46,7 @@ public class PictureUploadController {
         picture.setPictureURL(url);
         picture.setGoodID(GoodID);
         pictureService.save(picture);
+        searchEngineService.publishIndexUpdate(GoodID);
         return Result.ok(url);
     }
 

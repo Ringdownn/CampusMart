@@ -33,11 +33,31 @@
         <minio.version>8.2.0</minio.version>
         <knife4j.version>4.1.0</knife4j.version>
         <aliyun.sms.version>2.0.23</aliyun.sms.version>
+        <spring-cloud.version>2022.0.0</spring-cloud.version>
+        <nacos.version>2022.0.0.0</nacos.version>
     </properties>
 
     <!--配置dependencyManagement统一管理依赖版本-->
     <dependencyManagement>
         <dependencies>
+            <!-- Spring Cloud 依赖管理 -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring Cloud Alibaba 依赖管理 -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${nacos.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!--mybatis-plus-->
             <!--官方文档：https://baomidou.com/pages/bab2db/ -->
             <dependency>
