@@ -21,6 +21,7 @@ target/
 .env
 .env.local
 config/application-*.yml
+!deploy/docker/docker-compose.yml
 
 # 日志和临时文件
 logs/
