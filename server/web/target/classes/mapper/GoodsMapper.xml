@@ -78,4 +78,24 @@
         ${ew.customSqlSegment}
         ORDER BY g.publishTime DESC
     </select>
+
+    <select id="selectGoodsPictureURL" resultType="java.lang.String">
+        SELECT
+        p.pictureURL
+        FROM
+        picture p
+        WHERE
+        p.goodID = #{goodsId}
+        LIMIT 1
+    </select>
+
+    <select id="selectUserInfo" resultType="java.util.Map">
+        SELECT
+        u.avatarURL AS avatarURL,
+        u.nickname AS nickname
+        FROM
+        `user` u
+        WHERE
+        u.userID = #{userId}
+    </select>
 </mapper>

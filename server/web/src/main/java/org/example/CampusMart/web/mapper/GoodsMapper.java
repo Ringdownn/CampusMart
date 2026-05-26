@@ -7,6 +7,8 @@ import org.example.CampusMart.model.entity.Goods;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.example.CampusMart.web.vo.GoodsVo;
 
+import java.util.Map;
+
 /**
 * @author a32271
 * @description 针对表【goods】的数据库操作Mapper
@@ -20,6 +22,10 @@ public interface GoodsMapper extends BaseMapper<Goods> {
     IPage<GoodsVo> selectGoodsByTitle(IPage<GoodsVo> page, @Param("ew") LambdaQueryWrapper<Goods> queryWrapper);
 
     IPage<GoodsVo> selectGoodsByPublisherId(IPage<GoodsVo> page, @Param("ew") LambdaQueryWrapper<Goods> queryWrapper);
+
+    String selectGoodsPictureURL(Long goodsId);
+
+    Map<String, Object> selectUserInfo(Long userId);
 }
 
 

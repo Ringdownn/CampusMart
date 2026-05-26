@@ -14,6 +14,12 @@
  Date: 31/12/2025 07:25:14
 */
 
+USE test;   -- 如果你想使用 test 数据库
+-- 或者先创建并切换到新数据库
+CREATE DATABASE IF NOT EXISTS campus_mart;
+USE campus_mart;
+
+
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -86,5 +92,33 @@ CREATE TABLE `user` (
   `avatarURL` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`userID`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=2006064223557283843 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
+
+-- ----------------------------
+-- Table structure for goods_like
+-- ----------------------------
+DROP TABLE IF EXISTS `goods_like`;
+CREATE TABLE `goods_like` (
+  `likeID` bigint NOT NULL AUTO_INCREMENT COMMENT '点赞ID',
+  `userID` bigint NOT NULL COMMENT '用户ID',
+  `goodID` bigint NOT NULL COMMENT '商品ID',
+  `likeTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+  PRIMARY KEY (`likeID`) USING BTREE,
+  UNIQUE KEY `uk_user_good_like` (`userID`, `goodID`),
+  KEY `idx_goodID_like` (`goodID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC COMMENT='商品点赞表';
+
+-- ----------------------------
+-- Table structure for goods_collection
+-- ----------------------------
+DROP TABLE IF EXISTS `goods_collection`;
+CREATE TABLE `goods_collection` (
+  `collectionID` bigint NOT NULL AUTO_INCREMENT COMMENT '收藏ID',
+  `userID` bigint NOT NULL COMMENT '用户ID',
+  `goodID` bigint NOT NULL COMMENT '商品ID',
+  `collectionTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  PRIMARY KEY (`collectionID`) USING BTREE,
+  UNIQUE KEY `uk_user_good_collection` (`userID`, `goodID`),
+  KEY `idx_goodID_collection` (`goodID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC COMMENT='商品收藏表';
 
 SET FOREIGN_KEY_CHECKS = 1;

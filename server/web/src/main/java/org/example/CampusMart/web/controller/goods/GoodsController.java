@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.example.CampusMart.common.result.Result;
+import org.example.CampusMart.feign.SearchEngineService;
 import org.example.CampusMart.model.entity.Goods;
 import org.example.CampusMart.web.service.GoodsService;
 import org.example.CampusMart.web.vo.GoodsVo;
@@ -20,6 +21,9 @@ public class GoodsController {
     @Autowired
     private GoodsService goodsService;
 
+    @Autowired
+    private SearchEngineService searchEngineService;
+
     @Operation(summary = "分页查询商品列表（时间顺序）")
     @GetMapping("/page")
     public Result<IPage<GoodsVo>> pageGoods(@RequestParam long current, @RequestParam long size) {
@@ -31,12 +35,19 @@ public class GoodsController {
     @Operation(summary = "按标题模糊查询商品列表（时间顺序）")
     @GetMapping("/search")
     public Result<IPage<GoodsVo>> searchGoodsByTitle(@RequestParam long current, @RequestParam long size, @RequestParam String titleKeyword) {
+        try {
+            IPage<GoodsVo> page = searchEngineService.searchGoods(titleKeyword, current, size);
+            return Result.ok(page);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         IPage<GoodsVo> page = new Page<>(current, size);
         LambdaQueryWrapper<Goods> queryWrapper = new LambdaQueryWrapper<>();
         if (titleKeyword != null && !titleKeyword.isEmpty()) {
             queryWrapper.like(Goods::getTitle, titleKeyword);
         }
-        IPage<GoodsVo> list = goodsService.searchGoodsByTitle(page,queryWrapper);
+        IPage<GoodsVo> list = goodsService.searchGoodsByTitle(page, queryWrapper);
         return Result.ok(list);
     }
 
@@ -52,6 +63,9 @@ public class GoodsController {
     public Result addGoods(@RequestBody Goods goods) {
         boolean result = goodsService.save(goods);
         long newGoodsID = goods.getGoodID();
+
+        searchEngineService.publishIndexUpdate(newGoodsID);
+
         return Result.ok(newGoodsID);
     }
 
@@ -59,6 +73,9 @@ public class GoodsController {
     @PutMapping("/update")
     public Result updateGoods(@RequestBody Goods goods) {
         boolean result = goodsService.updateById(goods);
+
+        searchEngineService.publishIndexUpdate(goods.getGoodID());
+
         return Result.ok(result);
     }
 
@@ -66,16 +83,13 @@ public class GoodsController {
     @PutMapping("/deleteById")
     public Result deleteGoodsById(@RequestParam Long id) {
         boolean result = goodsService.removeById(id);
-        return Result.ok(result);
-    }
 
-    @Operation(summary = "根据发帖人查询商品列表")
-    @GetMapping("/poster")
-    public Result<IPage<GoodsVo>> getGoodsByPoster(@RequestParam Long posterId, @RequestParam long current, @RequestParam long size) {
-        IPage<GoodsVo> page = new Page<>(current, size);
-        LambdaQueryWrapper<Goods> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Goods::getPublishUserID, posterId);
-        IPage<GoodsVo> list = goodsService.searchGoodsByPublisherId(page,queryWrapper);
-        return Result.ok(list);
+        try {
+            searchEngineService.removeIndex(id);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return Result.ok(result);
     }
 }

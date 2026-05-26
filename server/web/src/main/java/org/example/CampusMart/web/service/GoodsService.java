@@ -6,6 +6,8 @@ import org.example.CampusMart.model.entity.Goods;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.example.CampusMart.web.vo.GoodsVo;
 
+import java.util.Map;
+
 /**
 * @author a32271
 * @description 针对表【goods】的数据库操作Service
@@ -18,4 +20,8 @@ public interface GoodsService extends IService<Goods> {
     IPage<GoodsVo> searchGoodsByTitle(IPage<GoodsVo> page, LambdaQueryWrapper<Goods> queryWrapper);
 
     IPage<GoodsVo> searchGoodsByPublisherId(IPage<GoodsVo> page, LambdaQueryWrapper<Goods> queryWrapper);
+
+    String getGoodsPictureURL(Long goodsId);
+
+    Map<String, Object> getUserInfo(Long userId);
 }

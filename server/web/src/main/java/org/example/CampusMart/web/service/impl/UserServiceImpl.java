@@ -64,8 +64,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             );
 
             // 3. 调用 upload 方法上传
-            String url = pictureService.upload(multipartFile);
-            user.setAvatarURL(url);
+            String filename = pictureService.upload(multipartFile);
+            user.setAvatarURL(filename);
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException("读取默认头像文件失败", e);
