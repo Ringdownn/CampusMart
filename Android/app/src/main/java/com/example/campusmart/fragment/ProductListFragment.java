@@ -35,8 +35,10 @@ import java.util.List;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class ProductListFragment extends Fragment {
@@ -54,6 +56,8 @@ public class ProductListFragment extends Fragment {
     private EditText etSearch;
     private ImageView btnSearch;
     private String currentKeyword = "";
+    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    private static final String SEARCH_DATABASE = "campusmart";
 
     @Nullable
     @Override
@@ -118,28 +122,13 @@ public class ProductListFragment extends Fragment {
         if (isLoading) return;
         isLoading = true;
 
-        String url;
+        Request request;
         if (isSearch && !currentKeyword.isEmpty()) {
-            // 搜索接口
-            url = baseUrl + "/app/goods/search?current=" + current + "&size=" + size + "&titleKeyword=" + currentKeyword;
+            request = buildSearchRequest(current, size);
         } else {
-            // 普通列表接口
-            url = baseUrl + "/app/goods/page?current=" + current + "&size=" + size;
+            request = buildGoodsPageRequest(current, size);
         }
 
-        // 创建请求
-        Request.Builder requestBuilder = new Request.Builder()
-                .url(url)
-                .get();
-
-        // 如果Token存在则添加到请求头
-        if (token != null && !token.isEmpty()) {
-            requestBuilder.addHeader("access-token", token);
-        }
-
-        Request request = requestBuilder.build();
-
-        // 发送请求
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
@@ -151,8 +140,7 @@ public class ProductListFragment extends Fragment {
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                // 处理Token失效情况
-                if (response.code() == 601 || response.code() == 602) {
+                if (response.code() == 601 || response.code() == 602 || response.code() == 401) {
                     new Handler(Looper.getMainLooper()).post(() -> {
                         Toast.makeText(getContext(), "Login expired, please login again", Toast.LENGTH_SHORT).show();
                         isLoading = false;
@@ -162,38 +150,11 @@ public class ProductListFragment extends Fragment {
 
                 if (response.isSuccessful() && response.body() != null) {
                     String responseData = response.body().string();
-
-                    // 解析JSON响应
-                    Type type = new TypeToken<Result<PageImpl<GoodsVo>>>(){}.getType();
-                    Result<PageImpl<GoodsVo>> result = gson.fromJson(responseData, type);
-
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        if (result != null && result.getCode() == 200 && result.getData() != null) {
-                            List<GoodsVo> goodsList = result.getData().getRecords();
-
-                            // 判断是否有更多数据
-                            hasMore = current < result.getData().getPages();
-
-                            // 转换数据并添加到列表
-                            for (GoodsVo goods : goodsList) {
-                                productList.add(new ProductAdapter.Product(
-                                        goods.getTitle(),
-                                        R.drawable.placeholder,
-                                        goods.getNickname(),
-                                        R.drawable.avatar_placeholder,
-                                        goods.getPictureURL(),
-                                        goods.getAvatarURL(),
-                                        goods.getGoodID()
-                                ));
-                            }
-
-                            // 通知适配器更新
-                            productAdapter.notifyDataSetChanged();
-                        } else {
-                            Toast.makeText(getContext(), "Load failed: " + (result != null ? result.getMessage() : "Unknown error"), Toast.LENGTH_SHORT).show();
-                        }
-                        isLoading = false;
-                    });
+                    if (isSearch && !currentKeyword.isEmpty()) {
+                        handleSearchResponse(responseData, current);
+                    } else {
+                        handleGoodsPageResponse(responseData, current);
+                    }
                 } else {
                     new Handler(Looper.getMainLooper()).post(() -> {
                         Toast.makeText(getContext(), "Server error: " + response.code(), Toast.LENGTH_SHORT).show();
@@ -202,6 +163,128 @@ public class ProductListFragment extends Fragment {
                 }
             }
         });
+    }
+
+    private Request buildGoodsPageRequest(long current, long size) {
+        String url = baseUrl + "/app/goods/page?current=" + current + "&size=" + size;
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(url)
+                .get();
+
+        if (token != null && !token.isEmpty()) {
+            requestBuilder.addHeader("access-token", token);
+        }
+
+        return requestBuilder.build();
+    }
+
+    private Request buildSearchRequest(long current, long size) {
+        SearchRequest searchRequest = new SearchRequest(currentKeyword, current, size);
+        RequestBody body = RequestBody.create(gson.toJson(searchRequest), JSON);
+        return new Request.Builder()
+                .url(baseUrl + "/api/query?database=" + SEARCH_DATABASE)
+                .post(body)
+                .build();
+    }
+
+    private void handleGoodsPageResponse(String responseData, long current) {
+        Type type = new TypeToken<Result<PageImpl<GoodsVo>>>(){}.getType();
+        Result<PageImpl<GoodsVo>> result = gson.fromJson(responseData, type);
+
+        new Handler(Looper.getMainLooper()).post(() -> {
+            if (result != null && result.getCode() == 200 && result.getData() != null) {
+                List<GoodsVo> goodsList = result.getData().getRecords();
+                hasMore = current < result.getData().getPages();
+                appendGoods(goodsList);
+            } else {
+                Toast.makeText(getContext(), "Load failed: " + (result != null ? result.getMessage() : "Unknown error"), Toast.LENGTH_SHORT).show();
+            }
+            isLoading = false;
+        });
+    }
+
+    private void handleSearchResponse(String responseData, long current) {
+        SearchResponse result = gson.fromJson(responseData, SearchResponse.class);
+
+        new Handler(Looper.getMainLooper()).post(() -> {
+            if (result != null && result.state && result.data != null) {
+                hasMore = current < result.data.pageCount;
+                appendGoods(result.data.toGoodsList());
+            } else {
+                Toast.makeText(getContext(), "Search failed: " + (result != null ? result.message : "Unknown error"), Toast.LENGTH_SHORT).show();
+            }
+            isLoading = false;
+        });
+    }
+
+    private void appendGoods(List<GoodsVo> goodsList) {
+        if (goodsList == null) {
+            return;
+        }
+        for (GoodsVo goods : goodsList) {
+            productList.add(new ProductAdapter.Product(
+                    goods.getTitle(),
+                    R.drawable.placeholder,
+                    goods.getNickname(),
+                    R.drawable.avatar_placeholder,
+                    goods.getPictureURL(),
+                    goods.getAvatarURL(),
+                    goods.getGoodID()
+            ));
+        }
+        productAdapter.notifyDataSetChanged();
+    }
+
+    private static class SearchRequest {
+        private final String query;
+        private final long page;
+        private final long limit;
+        private final String order = "desc";
+        private final String scoreExp = "";
+
+        SearchRequest(String query, long page, long limit) {
+            this.query = query;
+            this.page = page;
+            this.limit = limit;
+        }
+    }
+
+    private static class SearchResponse {
+        private boolean state;
+        private String message;
+        private SearchData data;
+    }
+
+    private static class SearchData {
+        private long pageCount;
+        private List<SearchDocument> documents;
+
+        private List<GoodsVo> toGoodsList() {
+            List<GoodsVo> goodsList = new ArrayList<>();
+            if (documents == null) {
+                return goodsList;
+            }
+            for (SearchDocument item : documents) {
+                if (item == null) {
+                    continue;
+                }
+                GoodsVo goods = item.document != null ? item.document : new GoodsVo();
+                if (goods.getGoodID() == null) {
+                    goods.setGoodID(item.id);
+                }
+                if (goods.getPictureURL() == null || goods.getPictureURL().isEmpty()) {
+                    goods.setPictureURL(item.imageURL);
+                }
+                goodsList.add(goods);
+            }
+            return goodsList;
+        }
+    }
+
+    private static class SearchDocument {
+        private Long id;
+        private String imageURL;
+        private GoodsVo document;
     }
 
 }

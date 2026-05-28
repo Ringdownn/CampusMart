@@ -28,7 +28,8 @@ public class AuthFilter implements GlobalFilter, Ordered {
         "/app/goods/search",
         "/app/goods/selectById",
         "/app/messages/list",
-        "/app/messages/recent"
+        "/app/messages/recent",
+        "/app/payments/alipay/notify"
     );
 
     @Override

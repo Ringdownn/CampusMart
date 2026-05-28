@@ -1,8 +1,5 @@
 package com.example.campusmart.vo;
 
-
-import java.util.Date;
-
 public class MessageVo{
     private Long messageID;
     private Long senderID;
@@ -12,7 +9,7 @@ public class MessageVo{
     private String receiverNickname;
     private String receiverAvatarURL;
     private String messageContent;
-    private Date sendTime;
+    private Long sendTime;
 
     public Long getMessageID() {
         return messageID;
@@ -78,11 +75,11 @@ public class MessageVo{
         this.messageContent = messageContent;
     }
 
-    public Date getSendTime() {
+    public Long getSendTime() {
         return sendTime;
     }
 
-    public void setSendTime(Date sendTime) {
+    public void setSendTime(Long sendTime) {
         this.sendTime = sendTime;
     }
 }

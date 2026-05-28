@@ -116,6 +116,9 @@ services:
       - redis
       - base-service
       - message-service
+      - payment-service
+      - trade-service
+      - wallet-service
       - search-engine
     ports:
       - "${GATEWAY_PORT}:8080"
@@ -141,9 +144,18 @@ services:
       SPRING_CLOUD_GATEWAY_ROUTES_3_URI: http://search-engine:5678
       SPRING_CLOUD_GATEWAY_ROUTES_3_PREDICATES_0: Path=/api/search/**
       SPRING_CLOUD_GATEWAY_ROUTES_3_FILTERS_0: RewritePath=/api/search/(?<segment>.*), /api/$${segment}
-      SPRING_CLOUD_GATEWAY_ROUTES_4_ID: base-service
-      SPRING_CLOUD_GATEWAY_ROUTES_4_URI: lb://base-service
-      SPRING_CLOUD_GATEWAY_ROUTES_4_PREDICATES_0: Path=/app/**
+      SPRING_CLOUD_GATEWAY_ROUTES_4_ID: payment-service
+      SPRING_CLOUD_GATEWAY_ROUTES_4_URI: http://payment-service:8092
+      SPRING_CLOUD_GATEWAY_ROUTES_4_PREDICATES_0: Path=/app/alipay/**,/app/payments/**,/app/orders/*/pay/alipay,/internal/alipay/**,/internal/payments/**
+      SPRING_CLOUD_GATEWAY_ROUTES_5_ID: trade-service
+      SPRING_CLOUD_GATEWAY_ROUTES_5_URI: http://trade-service:8091
+      SPRING_CLOUD_GATEWAY_ROUTES_5_PREDICATES_0: Path=/app/orders/**
+      SPRING_CLOUD_GATEWAY_ROUTES_6_ID: wallet-service
+      SPRING_CLOUD_GATEWAY_ROUTES_6_URI: http://wallet-service:8093
+      SPRING_CLOUD_GATEWAY_ROUTES_6_PREDICATES_0: Path=/app/wallet,/app/wallet/**
+      SPRING_CLOUD_GATEWAY_ROUTES_7_ID: base-service
+      SPRING_CLOUD_GATEWAY_ROUTES_7_URI: lb://base-service
+      SPRING_CLOUD_GATEWAY_ROUTES_7_PREDICATES_0: Path=/app/**
     networks:
       - campusmart
 
@@ -215,6 +227,71 @@ services:
       NACOS_GROUP: ${NACOS_GROUP}
       MINIO_ENDPOINT: http://minio:9000
       MINIO_BUCKET: ${MINIO_BUCKET}
+    networks:
+      - campusmart
+
+  payment-service:
+    build:
+      context: ../../server/payment-service
+      dockerfile: Dockerfile
+    container_name: campusmart-payment-service
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      PORT: 8092
+      PAYMENT_DB_DSN: root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE}?charset=utf8mb4&parseTime=True&loc=Local
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+      JWT_SECRET: ${JWT_SECRET}
+      ALIPAY_APP_ID: ${ALIPAY_APP_ID:-campusmart-sandbox-app}
+      ALIPAY_NOTIFY_URL: ${ALIPAY_NOTIFY_URL:-http://localhost:8080/app/payments/alipay/notify}
+      ALIPAY_MOCK_SIGN_SECRET: ${ALIPAY_MOCK_SIGN_SECRET:-campusmart-payment-mock-secret}
+      ALIPAY_VERIFY_SIGNATURE: ${ALIPAY_VERIFY_SIGNATURE:-false}
+    networks:
+      - campusmart
+
+  trade-service:
+    build:
+      context: ../../server/trade-service
+      dockerfile: Dockerfile
+    container_name: campusmart-trade-service
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      payment-service:
+        condition: service_started
+    environment:
+      PORT: 8091
+      TRADE_DB_DSN: root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE}?charset=utf8mb4&parseTime=True&loc=Local
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+      PAYMENT_SERVICE_URL: http://payment-service:8092
+      JWT_SECRET: ${JWT_SECRET}
+      PAY_TIMEOUT_MINUTES: ${PAY_TIMEOUT_MINUTES:-15}
+    networks:
+      - campusmart
+
+  wallet-service:
+    build:
+      context: ../../server/wallet-service
+      dockerfile: Dockerfile
+    container_name: campusmart-wallet-service
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      PORT: 8093
+      WALLET_DB_DSN: root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE}?charset=utf8mb4&parseTime=True&loc=Local
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+      JWT_SECRET: ${JWT_SECRET}
     networks:
       - campusmart
 

@@ -28,6 +28,24 @@ CampusMart/
 │   │   ├── go.sum
 │   │   ├── main.go
 │   │   └── ...
+│   ├── payment-service/        # 支付服务 (Go)
+│   │   ├── Dockerfile
+│   │   ├── go.mod
+│   │   ├── go.sum
+│   │   ├── cmd/
+│   │   └── internal/
+│   ├── trade-service/          # 订单交易服务 (Go)
+│   │   ├── Dockerfile
+│   │   ├── go.mod
+│   │   ├── go.sum
+│   │   ├── cmd/
+│   │   └── internal/
+│   ├── wallet-service/         # 钱包服务 (Go)
+│   │   ├── Dockerfile
+│   │   ├── go.mod
+│   │   ├── go.sum
+│   │   ├── cmd/
+│   │   └── internal/
 │   ├── search-engine/          # 搜索引擎 (从 MixFound 复制)
 │   │   ├── Dockerfile
 │   │   ├── config.yaml
@@ -94,6 +112,9 @@ docker-compose down
 | gateway | Java | 8080 | 8080 | API 网关，统一鉴权、路由 |
 | base-service | Java | 8081 | - | 基础业务服务 |
 | message-service | Go | 8083 | - | 消息服务 (WebSocket) |
+| payment-service | Go | 8092 | - | 支付宝沙箱绑定和支付服务 |
+| trade-service | Go | 8091 | - | 订单交易和状态流转服务 |
+| wallet-service | Go | 8093 | - | 钱包、流水和模拟提现服务 |
 | search-engine | Go | 5678 | - | 搜索引擎 |
 | ai-tagging | Python | 8080 | - | AI 图片打标 |
 | mysql | - | 3306 | 3306 | 数据库 |
@@ -119,6 +140,19 @@ gateway
   │     ├── mysql
   │     ├── nacos
   │     └── minio
+  │
+  ├── payment-service
+  │     ├── mysql
+  │     └── rabbitmq
+  │
+  ├── trade-service
+  │     ├── mysql
+  │     ├── rabbitmq
+  │     └── payment-service
+  │
+  ├── wallet-service
+  │     ├── mysql
+  │     └── rabbitmq
   │
   └── (Android 客户端通过 WebSocket)
         └── message-service
@@ -158,5 +192,8 @@ go run main.go
 | gateway | server/gateway/Dockerfile |
 | base-service | server/base-service/web/Dockerfile |
 | message-service | server/message-service-go/Dockerfile |
+| payment-service | server/payment-service/Dockerfile |
+| trade-service | server/trade-service/Dockerfile |
+| wallet-service | server/wallet-service/Dockerfile |
 | search-engine | server/search-engine/Dockerfile |
 | ai-tagging | server/ai-tagging/Dockerfile |

@@ -1,6 +1,8 @@
 package com.example.campusmart;
 
+import android.net.Uri;
 import android.os.Bundle;
+import androidx.annotation.NonNull;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -16,15 +18,14 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import okhttp3.Call;
 import okhttp3.Callback;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.WebSocket;
+import okhttp3.WebSocketListener;
 
 public class ChatActivity extends AppCompatActivity {
     private RecyclerView rvChat;
@@ -43,7 +44,8 @@ public class ChatActivity extends AppCompatActivity {
     private String baseUrl;
     private String selfAvatarUrl;
     private String otherAvatarUrl;
-    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    private WebSocket webSocket;
+    private boolean webSocketConnected = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +84,7 @@ public class ChatActivity extends AppCompatActivity {
 
         // 加载历史聊天记录
         loadChatHistory();
+        connectWebSocket();
     }
 
     private void getIntentData() {
@@ -156,59 +159,96 @@ public class ChatActivity extends AppCompatActivity {
             return;
         }
 
+        if (webSocket == null || !webSocketConnected) {
+            connectWebSocket();
+            Toast.makeText(this, "正在连接消息服务，请稍后重试", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Message message = new Message(
                 currentUserId,
                 otherUserId,
                 content
         );
 
-        String json = gson.toJson(message);
-        RequestBody body = RequestBody.create(json, JSON);
+        boolean accepted = webSocket.send(gson.toJson(message));
+        if (accepted) {
+            etInput.setText("");
+        } else {
+            Toast.makeText(this, "发送失败，消息连接不可用", Toast.LENGTH_SHORT).show();
+        }
+    }
 
-        String url = baseUrl + "/app/messages/send";
+    private void connectWebSocket() {
+        if (currentUserId == 0 || token == null || token.isEmpty()) {
+            return;
+        }
+        if (webSocket != null && webSocketConnected) {
+            return;
+        }
+
+        String wsUrl = toWebSocketUrl(baseUrl) + "/ws?userId=" + currentUserId + "&token=" + Uri.encode(token);
         Request request = new Request.Builder()
-                .url(url)
-                .addHeader("access-token", token)
-                .post(body)
+                .url(wsUrl)
+                .addHeader("Authorization", "Bearer " + token)
                 .build();
 
-        client.newCall(request).enqueue(new Callback() {
+        webSocket = client.newWebSocket(request, new WebSocketListener() {
             @Override
-            public void onFailure(Call call, IOException e) {
-                runOnUiThread(() ->
-                        Toast.makeText(ChatActivity.this, "发送失败，请检查网络", Toast.LENGTH_SHORT).show()
-                );
+            public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
+                webSocketConnected = true;
             }
 
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful() && response.body() != null) {
-                    String responseData = response.body().string();
-                    Result<Boolean> result = gson.fromJson(
-                            responseData,
-                            new TypeToken<Result<Boolean>>(){}.getType()
-                    );
+            public void onMessage(@NonNull WebSocket webSocket, @NonNull String text) {
+                Message message = gson.fromJson(text, Message.class);
+                if (message == null || message.getMessageContent() == null) {
+                    return;
+                }
 
-                    runOnUiThread(() -> {
-                        if (result.getCode() == 200 && result.getData()) {
-                            // 发送成功，更新本地列表
-                            msgList.add(new ChatAdapter.ChatMsg(true, content));
-                            adapter.notifyItemInserted(msgList.size() - 1);
-                            // 滚动到最新消息
-                            rvChat.scrollToPosition(msgList.size() - 1);
-                            // 清空输入框
-                            etInput.setText("");
-                        } else {
-                            Toast.makeText(ChatActivity.this, "发送失败：" + result.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                } else {
+                Long senderId = message.getSenderID();
+                Long receiverId = message.getReceiverID();
+                boolean belongsToCurrentChat =
+                        (currentUserId.equals(senderId) && otherUserId.equals(receiverId)) ||
+                                (currentUserId.equals(receiverId) && otherUserId.equals(senderId));
+                if (!belongsToCurrentChat) {
+                    return;
+                }
+
+                runOnUiThread(() -> addMessageToList(currentUserId.equals(senderId), message.getMessageContent()));
+            }
+
+            @Override
+            public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
+                webSocketConnected = false;
+            }
+
+            @Override
+            public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable t, Response response) {
+                webSocketConnected = false;
+                if (!isFinishing()) {
                     runOnUiThread(() ->
-                            Toast.makeText(ChatActivity.this, "服务器响应异常", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(ChatActivity.this, "消息连接失败，请检查网络", Toast.LENGTH_SHORT).show()
                     );
                 }
             }
         });
+    }
+
+    private String toWebSocketUrl(String httpUrl) {
+        if (httpUrl.startsWith("https://")) {
+            return "wss://" + httpUrl.substring("https://".length());
+        }
+        if (httpUrl.startsWith("http://")) {
+            return "ws://" + httpUrl.substring("http://".length());
+        }
+        return httpUrl;
+    }
+
+    private void addMessageToList(boolean isSelf, String content) {
+        msgList.add(new ChatAdapter.ChatMsg(isSelf, content));
+        adapter.notifyItemInserted(msgList.size() - 1);
+        rvChat.scrollToPosition(msgList.size() - 1);
     }
 
     private void updateChatList(List<MessageVo> messageVos) {
@@ -221,5 +261,13 @@ public class ChatActivity extends AppCompatActivity {
         if (msgList.size() > 0) {
             rvChat.scrollToPosition(msgList.size() - 1);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (webSocket != null) {
+            webSocket.close(1000, "chat closed");
+        }
+        super.onDestroy();
     }
 }

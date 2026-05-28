@@ -7,7 +7,7 @@ public class RecentChatVo {
     private String otherID;
     private String otherAvatarURL;
     private String lastestMessage;
-    private Date lastestMessageTime;
+    private Long lastestMessageTime;
 
     public String getLastestMessage() {
         return lastestMessage;
@@ -42,10 +42,10 @@ public class RecentChatVo {
     }
 
     public Date getLastestMessageTime() {
-        return lastestMessageTime;
+        return lastestMessageTime == null ? null : new Date(lastestMessageTime);
     }
 
-    public void setLastestMessageTime(Date lastestMessageTime) {
+    public void setLastestMessageTime(Long lastestMessageTime) {
         this.lastestMessageTime = lastestMessageTime;
     }
 }
