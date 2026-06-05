@@ -26,6 +26,8 @@ public interface GoodsMapper extends BaseMapper<Goods> {
     String selectGoodsPictureURL(Long goodsId);
 
     Map<String, Object> selectUserInfo(Long userId);
+
+    IPage<GoodsVo> selectCollectedGoodsByUserId(IPage<GoodsVo> page, @Param("userId") Long userId);
 }
 
 

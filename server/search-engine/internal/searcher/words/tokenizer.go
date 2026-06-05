@@ -51,6 +51,15 @@ func (t *Tokenizer) Cut(text string) []string {
 		}
 	}
 
+	numberWords := utils.ExtractNumberWords(text)
+	for _, word := range numberWords {
+		_, find := wordsMap[word]
+		if !find {
+			wordsSlice = append(wordsSlice, word)
+			wordsMap[word] = struct{}{}
+		}
+	}
+
 	//去除英文
 	text = utils.RemoveEnglish(text)
 
@@ -88,6 +97,15 @@ func (t *Tokenizer) CutWithTranslate(text string) []string {
 
 	englishWords := utils.ExtractEnglishWords(text)
 	for _, word := range englishWords {
+		_, find := wordsMap[word]
+		if !find {
+			wordsSlice = append(wordsSlice, word)
+			wordsMap[word] = struct{}{}
+		}
+	}
+
+	numberWords := utils.ExtractNumberWords(text)
+	for _, word := range numberWords {
 		_, find := wordsMap[word]
 		if !find {
 			wordsSlice = append(wordsSlice, word)

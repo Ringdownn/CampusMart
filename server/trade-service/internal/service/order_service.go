@@ -86,6 +86,16 @@ func (s *OrderService) GetOrder(ctx context.Context, currentUserID, orderID int6
 	return order, nil
 }
 
+func (s *OrderService) GetLatestOrderByGoodsAndParties(ctx context.Context, currentUserID, goodsID, buyerID, sellerID int64) (*model.Order, error) {
+	if currentUserID <= 0 || goodsID <= 0 || buyerID <= 0 || sellerID <= 0 {
+		return nil, ErrInvalidParam
+	}
+	if currentUserID != buyerID && currentUserID != sellerID {
+		return nil, ErrOrderForbidden
+	}
+	return s.repo.FindLatestByGoodsAndParties(ctx, goodsID, buyerID, sellerID)
+}
+
 func (s *OrderService) ListBuyerOrders(ctx context.Context, buyerID int64) ([]model.Order, error) {
 	return s.repo.ListByBuyer(ctx, buyerID)
 }

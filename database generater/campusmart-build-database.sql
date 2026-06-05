@@ -199,11 +199,14 @@ CREATE TABLE `message` (
   `messageID` bigint NOT NULL AUTO_INCREMENT,
   `senderID` bigint NOT NULL,
   `receiverID` bigint NOT NULL,
+  `goodID` bigint NOT NULL,
   `message_content` text CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
   `sendTime` datetime NOT NULL,
   PRIMARY KEY (`messageID`) USING BTREE,
-  KEY `idx_sender_receiver_time` (`senderID`, `receiverID`, `sendTime`) USING BTREE,
-  KEY `idx_receiver_sender_time` (`receiverID`, `senderID`, `sendTime`) USING BTREE
+  KEY `idx_good_sender_receiver_time` (`goodID`, `senderID`, `receiverID`, `sendTime`) USING BTREE,
+  KEY `idx_good_receiver_sender_time` (`goodID`, `receiverID`, `senderID`, `sendTime`) USING BTREE,
+  KEY `idx_sender_receiver_good_message` (`senderID`, `receiverID`, `goodID`, `messageID`) USING BTREE,
+  KEY `idx_receiver_sender_good_message` (`receiverID`, `senderID`, `goodID`, `messageID`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------

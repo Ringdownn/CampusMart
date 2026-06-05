@@ -8,15 +8,17 @@ public class Message {
     private Long messageID;
     private Long senderID;
     private Long receiverID;
+    private Long goodID;
     private String messageContent;
     private String sendTime;
 
     private static final SimpleDateFormat DATE_FORMAT =
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US);
 
-    public Message(Long senderID, Long receiverID, String messageContent) {
+    public Message(Long senderID, Long receiverID, Long goodID, String messageContent) {
         this.senderID = senderID;
         this.receiverID = receiverID;
+        this.goodID = goodID;
         this.messageContent = messageContent;
         this.sendTime = DATE_FORMAT.format(new Date());
     }
@@ -43,6 +45,14 @@ public class Message {
 
     public void setReceiverID(Long receiverID) {
         this.receiverID = receiverID;
+    }
+
+    public Long getGoodID() {
+        return goodID;
+    }
+
+    public void setGoodID(Long goodID) {
+        this.goodID = goodID;
     }
 
     public String getMessageContent() {

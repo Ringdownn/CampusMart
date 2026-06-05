@@ -13,13 +13,14 @@ import (
 )
 
 type MessageWriter interface {
-	Insert(ctx context.Context, senderID, receiverID int64, content string, sendTime time.Time) (int64, error)
+	Insert(ctx context.Context, senderID, receiverID, goodID int64, content string, sendTime time.Time) (int64, error)
 }
 
 type Message struct {
 	MessageID      *int64 `json:"messageID,omitempty"`
 	SenderID       int64  `json:"senderID"`
 	ReceiverID     int64  `json:"receiverID"`
+	GoodID         int64  `json:"goodID"`
 	MessageContent string `json:"messageContent"`
 	SendTime       string `json:"sendTime,omitempty"`
 }
@@ -85,13 +86,13 @@ func (c *client) readPump(h *Hub, repo MessageWriter, logger *log.Logger) {
 		if msg.SenderID == 0 {
 			msg.SenderID = c.userID
 		}
-		if msg.SenderID != c.userID || msg.ReceiverID == 0 || msg.MessageContent == "" {
+		if msg.SenderID != c.userID || msg.ReceiverID == 0 || msg.GoodID == 0 || msg.MessageContent == "" {
 			continue
 		}
 
 		sendTime := parseSendTime(msg.SendTime)
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		id, err := repo.Insert(ctx, msg.SenderID, msg.ReceiverID, msg.MessageContent, sendTime)
+		id, err := repo.Insert(ctx, msg.SenderID, msg.ReceiverID, msg.GoodID, msg.MessageContent, sendTime)
 		cancel()
 		if err != nil {
 			if logger != nil {

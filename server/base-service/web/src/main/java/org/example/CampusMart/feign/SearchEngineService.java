@@ -8,6 +8,7 @@ import org.example.CampusMart.model.entity.Picture;
 import org.example.CampusMart.web.mapper.GoodsMapper;
 import org.example.CampusMart.web.mapper.PictureMapper;
 import org.example.CampusMart.web.mapper.UserMapper;
+import org.example.CampusMart.web.support.MediaUrlBuilder;
 import org.example.CampusMart.web.vo.GoodsVo;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,9 @@ public class SearchEngineService {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private MediaUrlBuilder mediaUrlBuilder;
+
     public IPage<GoodsVo> searchGoods(String keyword, long current, long size) {
         Map<String, Object> request = new HashMap<>();
         request.put("query", keyword);
@@ -62,9 +66,9 @@ public class SearchEngineService {
                     vo.setAppearance((String) doc.get("appearance"));
                     vo.setItemDescription((String) doc.get("itemDescription"));
                     vo.setPrice(((Number) doc.get("price")).longValue());
-                    vo.setPictureURL((String) doc.get("pictureURL"));
+                    vo.setPictureURL(mediaUrlBuilder.toPublicUrl((String) doc.get("pictureURL")));
                     vo.setNickname((String) doc.get("nickname"));
-                    vo.setAvatarURL((String) doc.get("avatarURL"));
+                    vo.setAvatarURL(mediaUrlBuilder.toPublicUrl((String) doc.get("avatarURL")));
                     goodsVoList.add(vo);
                 }
             }
@@ -127,6 +131,9 @@ public class SearchEngineService {
         String pictureURL = picture != null ? picture.getPictureURL() : "";
 
         Map<String, Object> userInfo = goodsMapper.selectUserInfo(goods.getPublishUserID());
+        String avatarURL = userInfo != null ? (String) userInfo.get("avatarURL") : "";
+        String publicPictureURL = mediaUrlBuilder.toPublicUrl(pictureURL);
+        String publicAvatarURL = mediaUrlBuilder.toPublicUrl(avatarURL);
 
         Map<String, Object> document = new HashMap<>();
         document.put("id", goods.getGoodID());
@@ -136,15 +143,15 @@ public class SearchEngineService {
         document.put("appearance", goods.getAppearance());
         document.put("itemDescription", goods.getItemDescription());
         document.put("price", goods.getPrice());
-        document.put("pictureURL", pictureURL);
+        document.put("pictureURL", publicPictureURL);
         document.put("nickname", userInfo != null ? userInfo.get("nickname") : "");
-        document.put("avatarURL", userInfo != null ? userInfo.get("avatarURL") : "");
+        document.put("avatarURL", publicAvatarURL);
 
         Map<String, Object> indexDoc = new HashMap<>();
         indexDoc.put("id", buildSearchIndexId(goods.getGoodID()));
         indexDoc.put("text", goods.getTitle() + " " + goods.getItemDescription());
-        if (pictureURL != null && !pictureURL.isEmpty()) {
-            indexDoc.put("imageURL", pictureURL);
+        if (publicPictureURL != null && !publicPictureURL.isEmpty()) {
+            indexDoc.put("imageURL", publicPictureURL);
         }
         indexDoc.put("document", document);
 

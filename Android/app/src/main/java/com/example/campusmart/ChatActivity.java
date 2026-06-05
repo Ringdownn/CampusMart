@@ -1,8 +1,14 @@
 package com.example.campusmart;
 
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -10,33 +16,47 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.bumptech.glide.Glide;
 import com.example.campusmart.adapter.ChatAdapter;
 import com.example.campusmart.entity.Message;
 import com.example.campusmart.result.Result;
+import com.example.campusmart.util.ImageUrlUtils;
 import com.example.campusmart.vo.MessageVo;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 
 public class ChatActivity extends AppCompatActivity {
+    private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
     private RecyclerView rvChat;
     private EditText etInput;
     private ChatAdapter adapter;
     private List<ChatAdapter.ChatMsg> msgList;
     private TextView tvTitle;
+    private View chatRoot;
+    private int chatRootPaddingLeft;
+    private int chatRootPaddingTop;
+    private int chatRootPaddingRight;
+    private int chatRootPaddingBottom;
 
     private Long currentUserId;
     private Long otherUserId;
+    private Long goodId;
     private String otherNickname;
+    private String goodTitle;
     private String token;
 
     private OkHttpClient client;
@@ -44,19 +64,39 @@ public class ChatActivity extends AppCompatActivity {
     private String baseUrl;
     private String selfAvatarUrl;
     private String otherAvatarUrl;
+    private ImageView ivGoodsImg;
+    private View layoutGoodsInfo;
+    private TextView tvGoodsTitle;
+    private TextView tvGoodsPrice;
+    private TextView tvGoodsStatus;
+    private Button btnGoodsAction;
+    private String goodImageUrl;
+    private double goodPrice;
+    private boolean isBuyer;
+    private Long orderId;
+    private String orderStatus;
     private WebSocket webSocket;
     private boolean webSocketConnected = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         setContentView(R.layout.activity_chat);
 
         // 初始化控件
         ImageView ivBack = findViewById(R.id.iv_back);
+        chatRoot = findViewById(R.id.chat_root);
         rvChat = findViewById(R.id.rv_chat);
         etInput = findViewById(R.id.et_input);
         tvTitle = findViewById(R.id.tv_title);
+        // 初始化商品信息栏控件
+        layoutGoodsInfo = findViewById(R.id.layout_goods_info);
+        ivGoodsImg = findViewById(R.id.iv_goods_img);
+        tvGoodsTitle = findViewById(R.id.tv_goods_title);
+        tvGoodsPrice = findViewById(R.id.tv_goods_price);
+        btnGoodsAction = findViewById(R.id.btn_goods_action);
+        tvGoodsStatus = findViewById(R.id.tv_goods_status);
         // 初始化发送按钮
         findViewById(R.id.btn_send).setOnClickListener(v -> sendMessage());
 
@@ -72,7 +112,11 @@ public class ChatActivity extends AppCompatActivity {
         initMsgData();
 
         // 设置标题为对方昵称
-        tvTitle.setText(otherNickname);
+        if (goodTitle != null && !goodTitle.isEmpty()) {
+            tvTitle.setText(otherNickname + " - " + goodTitle);
+        } else {
+            tvTitle.setText(otherNickname);
+        }
 
         // 初始化RecyclerView
         adapter = new ChatAdapter(msgList, selfAvatarUrl, otherAvatarUrl);
@@ -82,6 +126,10 @@ public class ChatActivity extends AppCompatActivity {
         // 返回按钮点击事件
         ivBack.setOnClickListener(v -> finish());
 
+        // 初始化商品信息栏
+        initGoodsInfoBar();
+        setupKeyboardAwareInputBar();
+
         // 加载历史聊天记录
         loadChatHistory();
         connectWebSocket();
@@ -90,23 +138,484 @@ public class ChatActivity extends AppCompatActivity {
     private void getIntentData() {
         currentUserId = getIntent().getLongExtra("currentUserId", 0);
         otherUserId = getIntent().getLongExtra("otherUserId", 0);
+        goodId = getIntent().getLongExtra("goodId", 0);
         otherNickname = getIntent().getStringExtra("otherNickname");
+        goodTitle = getIntent().getStringExtra("goodTitle");
         token = getIntent().getStringExtra("token");
         selfAvatarUrl = getIntent().getStringExtra("selfAvatarUrl");
         otherAvatarUrl = getIntent().getStringExtra("otherAvatarUrl");
+        goodImageUrl = getIntent().getStringExtra("goodImageUrl");
+        selfAvatarUrl = ImageUrlUtils.normalize(this, selfAvatarUrl);
+        otherAvatarUrl = ImageUrlUtils.normalize(this, otherAvatarUrl);
+        goodImageUrl = ImageUrlUtils.normalize(this, goodImageUrl);
+        goodPrice = getIntent().getDoubleExtra("goodPrice", 0);
+        isBuyer = getIntent().getBooleanExtra("isBuyer", true);
     }
 
     private void initMsgData() {
         msgList = new ArrayList<>();
     }
 
+    private void setupKeyboardAwareInputBar() {
+        if (chatRoot == null) {
+            return;
+        }
+
+        chatRootPaddingLeft = chatRoot.getPaddingLeft();
+        chatRootPaddingTop = chatRoot.getPaddingTop();
+        chatRootPaddingRight = chatRoot.getPaddingRight();
+        chatRootPaddingBottom = chatRoot.getPaddingBottom();
+
+        chatRoot.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+            Rect visibleFrame = new Rect();
+            chatRoot.getWindowVisibleDisplayFrame(visibleFrame);
+
+            int rootHeight = chatRoot.getRootView().getHeight();
+            int hiddenHeight = rootHeight - visibleFrame.bottom;
+            int keyboardThreshold = (int) (rootHeight * 0.15f);
+            int extraBottomPadding = hiddenHeight > keyboardThreshold ? hiddenHeight : 0;
+            int targetBottomPadding = chatRootPaddingBottom + extraBottomPadding;
+
+            if (chatRoot.getPaddingBottom() == targetBottomPadding) {
+                return;
+            }
+
+            chatRoot.setPadding(
+                    chatRootPaddingLeft,
+                    chatRootPaddingTop,
+                    chatRootPaddingRight,
+                    targetBottomPadding
+            );
+
+            if (extraBottomPadding > 0 && msgList != null && !msgList.isEmpty()) {
+                rvChat.post(() -> rvChat.scrollToPosition(msgList.size() - 1));
+            }
+        });
+    }
+
+    /**
+     * 初始化商品信息栏
+     * 1. 显示商品图片、名称、价格
+     * 2. 查询订单状态
+     * 3. 根据角色和状态显示对应按钮/文本
+     */
+    private void initGoodsInfoBar() {
+        // 显示商品基本信息
+        tvGoodsTitle.setText(goodTitle != null ? goodTitle : "Good name");
+        tvGoodsPrice.setText(String.format("¥ %.2f", goodPrice));
+        if (goodImageUrl != null && !goodImageUrl.isEmpty()) {
+            Glide.with(this).load(ImageUrlUtils.normalize(this, goodImageUrl)).placeholder(R.drawable.placeholder).into(ivGoodsImg);
+        }
+        layoutGoodsInfo.setOnClickListener(v -> openOrderDetail());
+
+        // 查询订单状态（预留接口）
+        loadOrderStatus();
+    }
+
+    private void openOrderDetail() {
+        if (orderId == null || orderId <= 0) {
+            Toast.makeText(this, "Please create an order first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(ChatActivity.this, OrderDetailActivity.class);
+        intent.putExtra("orderId", orderId);
+        intent.putExtra("goodTitle", goodTitle);
+        intent.putExtra("goodImageUrl", goodImageUrl);
+        intent.putExtra("goodPrice", goodPrice);
+        startActivity(intent);
+    }
+
+    /**
+     * 查询订单状态
+     * GET /app/orders/by-goods?goodsId={}&buyerId={}&sellerId={}
+     */
+    private void loadOrderStatus() {
+        if (currentUserId == 0 || otherUserId == 0 || goodId == 0 || token == null || token.isEmpty()) {
+            updateGoodsActionUI(null);
+            return;
+        }
+
+        long buyerId = isBuyer ? currentUserId : otherUserId;
+        long sellerId = isBuyer ? otherUserId : currentUserId;
+        requestLatestOrderStatus(buyerId, sellerId, true);
+    }
+
+    private void requestLatestOrderStatus(long buyerId, long sellerId, boolean allowSwap) {
+        String url = baseUrl + "/app/orders/by-goods?goodsId=" + goodId
+                + "&buyerId=" + buyerId
+                + "&sellerId=" + sellerId;
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("access-token", token)
+                .get()
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() -> {
+                    orderId = null;
+                    updateGoodsActionUI(null);
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful() && response.body() != null) {
+                    String responseData = response.body().string();
+                    Result<OrderInfo> result = parseResult(responseData, new TypeToken<Result<OrderInfo>>(){}.getType());
+                    OrderInfo orderInfo = result != null ? result.getData() : null;
+                    if (result != null && result.getCode() == 200 && orderInfo != null) {
+                        runOnUiThread(() -> {
+                            orderId = orderInfo.orderId;
+                            isBuyer = currentUserId.equals(orderInfo.buyerId);
+                            updateGoodsActionUI(orderInfo.status);
+                        });
+                    } else if (allowSwap) {
+                        requestLatestOrderStatus(sellerId, buyerId, false);
+                    } else {
+                        runOnUiThread(() -> {
+                            orderId = null;
+                            updateGoodsActionUI(null);
+                        });
+                    }
+                } else {
+                    runOnUiThread(() -> {
+                        orderId = null;
+                        updateGoodsActionUI(null);
+                    });
+                }
+            }
+        });
+    }
+
+    /**
+     * 根据角色和订单状态更新商品信息栏的按钮/文本
+     */
+    private void updateGoodsActionUI(String status) {
+        this.orderStatus = status;
+        String safeStatus = status != null ? status : "";
+
+        if (isBuyer) {
+            // 买家视角
+            switch (safeStatus) {
+                case "CREATED":
+                    // 已创建订单，待付款
+                    showActionButton("Pay", this::onPayClick);
+                    break;
+                case "PAID":
+                    // 已付款，待确认收货
+                    showActionButton("Confirm receipt", this::onConfirmReceiptClick);
+                    break;
+                case "SETTLED":
+                    // 已完成
+                    showStatusText("Completed");
+                    break;
+                case "CANCELLED":
+                    // 已取消，可重新购买
+                    showActionButton("Buy it!", this::onBuyClick);
+                    break;
+                default:
+                    // 无订单
+                    showActionButton("Buy it!", this::onBuyClick);
+                    break;
+            }
+        } else {
+            // 卖家视角
+            switch (safeStatus) {
+                case "CREATED":
+                    showStatusText("Waiting payment");
+                    break;
+                case "PAID":
+                    showStatusText("Waiting buyer receipt");
+                    break;
+                case "SETTLED":
+                    showStatusText("Completed");
+                    break;
+                case "CANCELLED":
+                    showStatusText("Order cancelled");
+                    break;
+                default:
+                    // 无订单，卖家不显示按钮
+                    btnGoodsAction.setVisibility(Button.GONE);
+                    tvGoodsStatus.setVisibility(TextView.GONE);
+                    break;
+            }
+        }
+    }
+
+    /**
+     * 显示操作按钮
+     */
+    private void showActionButton(String text, Runnable onClick) {
+        btnGoodsAction.setText(text);
+        btnGoodsAction.setEnabled(true);
+        btnGoodsAction.setVisibility(Button.VISIBLE);
+        tvGoodsStatus.setVisibility(TextView.GONE);
+        btnGoodsAction.setOnClickListener(v -> onClick.run());
+    }
+
+    /**
+     * 显示状态文本（禁用状态）
+     */
+    private void showStatusText(String text) {
+        tvGoodsStatus.setText(text);
+        tvGoodsStatus.setVisibility(TextView.VISIBLE);
+        btnGoodsAction.setVisibility(Button.GONE);
+    }
+
+    /**
+     * 点击"Buy it!" - 创建订单
+     */
+    private void onBuyClick() {
+        if (!ensureBuyerActionReady()) {
+            return;
+        }
+
+        String url = baseUrl + "/app/orders";
+        CreateOrderRequest body = new CreateOrderRequest(goodId);
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("access-token", token)
+                .post(RequestBody.create(gson.toJson(body), JSON))
+                .build();
+
+        setActionLoading("Creating...");
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() -> {
+                    updateGoodsActionUI(orderStatus);
+                    Toast.makeText(ChatActivity.this, "创建订单失败，请检查网络", Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String responseData = response.body() != null ? response.body().string() : "";
+                Result<OrderInfo> result = parseResult(responseData, new TypeToken<Result<OrderInfo>>(){}.getType());
+
+                runOnUiThread(() -> {
+                    if (response.isSuccessful() && result != null && result.getCode() == 200 && result.getData() != null) {
+                        OrderInfo order = result.getData();
+                        orderId = order.orderId;
+                        isBuyer = currentUserId.equals(order.buyerId);
+                        updateGoodsActionUI(order.status);
+                        Toast.makeText(ChatActivity.this, "订单创建成功，请继续支付", Toast.LENGTH_SHORT).show();
+                    } else {
+                        updateGoodsActionUI(orderStatus);
+                        showError("Create Order Failed", result != null ? result.getMessage() : "服务器响应异常");
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * 点击"Pay" - 获取支付宝沙箱支付参数
+     */
+    private void onPayClick() {
+        if (!ensureBuyerActionReady() || orderId == null || orderId <= 0) {
+            Toast.makeText(this, "订单信息异常，请重新进入聊天页", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String url = baseUrl + "/app/orders/" + orderId + "/pay/alipay";
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("access-token", token)
+                .post(RequestBody.create("", JSON))
+                .build();
+
+        setActionLoading("Paying...");
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() -> {
+                    updateGoodsActionUI(orderStatus);
+                    Toast.makeText(ChatActivity.this, "获取支付参数失败，请检查网络", Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String responseData = response.body() != null ? response.body().string() : "";
+                Result<PaymentInfo> result = parseResult(responseData, new TypeToken<Result<PaymentInfo>>(){}.getType());
+
+                runOnUiThread(() -> {
+                    updateGoodsActionUI(orderStatus);
+                    if (response.isSuccessful() && result != null && result.getCode() == 200 && result.getData() != null) {
+                        showSandboxPayDialog(result.getData());
+                    } else {
+                        showError("Payment Failed", result != null ? result.getMessage() : "服务器响应异常");
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * 点击"Confirm receipt" - 确认收货
+     */
+    private void onConfirmReceiptClick() {
+        if (!ensureBuyerActionReady() || orderId == null || orderId <= 0) {
+            Toast.makeText(this, "订单信息异常，请重新进入聊天页", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Confirm Receipt")
+                .setMessage("Are you sure you have received the goods?")
+                .setPositiveButton("Confirm", (dialog, which) -> confirmReceipt())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showSandboxPayDialog(PaymentInfo paymentInfo) {
+        String amount = getOrderStringParam(paymentInfo.orderString, "total_amount");
+        if (paymentInfo.payNo == null || paymentInfo.payNo.isEmpty() || amount == null || amount.isEmpty()) {
+            showError("Payment Failed", "支付参数不完整");
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Sandbox Payment")
+                .setMessage("Pay No: " + paymentInfo.payNo + "\nAmount: ¥ " + amount + "\n\nClick Mock Paid to simulate Alipay success.")
+                .setPositiveButton("Mock Paid", (dialog, which) -> mockAlipayPaid(paymentInfo.payNo, amount))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void mockAlipayPaid(String payNo, String amount) {
+        String url = baseUrl + "/app/payments/alipay/notify";
+        AlipayNotifyRequest body = new AlipayNotifyRequest(
+                payNo,
+                "MOCK_TRADE_" + System.currentTimeMillis(),
+                amount,
+                "TRADE_SUCCESS"
+        );
+        Request request = new Request.Builder()
+                .url(url)
+                .post(RequestBody.create(gson.toJson(body), JSON))
+                .build();
+
+        setActionLoading("Syncing...");
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() -> {
+                    updateGoodsActionUI(orderStatus);
+                    Toast.makeText(ChatActivity.this, "支付回调失败，请检查网络", Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String responseData = response.body() != null ? response.body().string() : "";
+                boolean success = response.isSuccessful() && "success".equalsIgnoreCase(responseData.trim());
+                runOnUiThread(() -> {
+                    if (success) {
+                        orderStatus = "PAID";
+                        updateGoodsActionUI(orderStatus);
+                        Toast.makeText(ChatActivity.this, "支付成功，订单状态同步中", Toast.LENGTH_SHORT).show();
+                        btnGoodsAction.postDelayed(() -> ChatActivity.this.loadOrderStatus(), 2000);
+                    } else {
+                        updateGoodsActionUI(orderStatus);
+                        showError("Payment Failed", "支付回调未成功");
+                    }
+                });
+            }
+        });
+    }
+
+    private void confirmReceipt() {
+        String url = baseUrl + "/app/orders/" + orderId + "/confirm-receipt";
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("access-token", token)
+                .post(RequestBody.create("", JSON))
+                .build();
+
+        setActionLoading("Confirming...");
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() -> {
+                    updateGoodsActionUI(orderStatus);
+                    Toast.makeText(ChatActivity.this, "确认收货失败，请检查网络", Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String responseData = response.body() != null ? response.body().string() : "";
+                Result<OrderInfo> result = parseResult(responseData, new TypeToken<Result<OrderInfo>>(){}.getType());
+
+                runOnUiThread(() -> {
+                    if (response.isSuccessful() && result != null && result.getCode() == 200 && result.getData() != null) {
+                        OrderInfo order = result.getData();
+                        orderId = order.orderId;
+                        updateGoodsActionUI(order.status);
+                        Toast.makeText(ChatActivity.this, "Receipt confirmed!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        updateGoodsActionUI(orderStatus);
+                        showError("Confirm Receipt Failed", result != null ? result.getMessage() : "服务器响应异常");
+                    }
+                });
+            }
+        });
+    }
+
+    private boolean ensureBuyerActionReady() {
+        if (!isBuyer) {
+            Toast.makeText(this, "卖家不能执行该操作", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        if (currentUserId == 0 || goodId == 0 || token == null || token.isEmpty()) {
+            Toast.makeText(this, "操作失败，参数异常", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        return true;
+    }
+
+    private void setActionLoading(String text) {
+        btnGoodsAction.setText(text);
+        btnGoodsAction.setEnabled(false);
+    }
+
+    private void showError(String title, String message) {
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(message != null && !message.isEmpty() ? message : "Unknown error")
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private String getOrderStringParam(String orderString, String name) {
+        if (orderString == null || orderString.isEmpty()) {
+            return "";
+        }
+        return Uri.parse("https://campusmart.pay/?" + orderString).getQueryParameter(name);
+    }
+
+    private <T> Result<T> parseResult(String responseData, Type type) {
+        try {
+            return gson.fromJson(responseData, type);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private void loadChatHistory() {
-        if (currentUserId == 0 || otherUserId == 0 || token == null || token.isEmpty()) {
+        if (currentUserId == 0 || otherUserId == 0 || goodId == 0 || token == null || token.isEmpty()) {
             Toast.makeText(this, "聊天参数异常", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String url = baseUrl + "/app/messages/list?senderId=" + currentUserId + "&receiverId=" + otherUserId;
+        String url = baseUrl + "/app/messages/list?senderId=" + currentUserId
+                + "&receiverId=" + otherUserId
+                + "&goodId=" + goodId;
 
         Request request = new Request.Builder()
                 .url(url)
@@ -154,7 +663,7 @@ public class ChatActivity extends AppCompatActivity {
             return;
         }
 
-        if (currentUserId == 0 || otherUserId == 0 || token == null || token.isEmpty()) {
+        if (currentUserId == 0 || otherUserId == 0 || goodId == 0 || token == null || token.isEmpty()) {
             Toast.makeText(this, "发送失败，参数异常", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -168,6 +677,7 @@ public class ChatActivity extends AppCompatActivity {
         Message message = new Message(
                 currentUserId,
                 otherUserId,
+                goodId,
                 content
         );
 
@@ -208,9 +718,11 @@ public class ChatActivity extends AppCompatActivity {
 
                 Long senderId = message.getSenderID();
                 Long receiverId = message.getReceiverID();
+                Long messageGoodId = message.getGoodID();
                 boolean belongsToCurrentChat =
-                        (currentUserId.equals(senderId) && otherUserId.equals(receiverId)) ||
-                                (currentUserId.equals(receiverId) && otherUserId.equals(senderId));
+                        goodId.equals(messageGoodId) &&
+                                ((currentUserId.equals(senderId) && otherUserId.equals(receiverId)) ||
+                                        (currentUserId.equals(receiverId) && otherUserId.equals(senderId)));
                 if (!belongsToCurrentChat) {
                     return;
                 }
@@ -269,5 +781,38 @@ public class ChatActivity extends AppCompatActivity {
             webSocket.close(1000, "chat closed");
         }
         super.onDestroy();
+    }
+
+    private static class OrderInfo {
+        private Long orderId;
+        private Long buyerId;
+        private String status;
+    }
+
+    private static class CreateOrderRequest {
+        private final Long goodsId;
+
+        private CreateOrderRequest(Long goodsId) {
+            this.goodsId = goodsId;
+        }
+    }
+
+    private static class PaymentInfo {
+        private String payNo;
+        private String orderString;
+    }
+
+    private static class AlipayNotifyRequest {
+        private final String out_trade_no;
+        private final String trade_no;
+        private final String total_amount;
+        private final String trade_status;
+
+        private AlipayNotifyRequest(String outTradeNo, String tradeNo, String totalAmount, String tradeStatus) {
+            this.out_trade_no = outTradeNo;
+            this.trade_no = tradeNo;
+            this.total_amount = totalAmount;
+            this.trade_status = tradeStatus;
+        }
     }
 }

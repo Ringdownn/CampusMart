@@ -6,6 +6,9 @@ public class RecentChatVo {
     private String otherNickname;
     private String otherID;
     private String otherAvatarURL;
+    private Long goodID;
+    private String goodTitle;
+    private String goodPictureURL;
     private String lastestMessage;
     private Long lastestMessageTime;
 
@@ -39,6 +42,30 @@ public class RecentChatVo {
 
     public void setOtherAvatarURL(String otherAvatarURL) {
         this.otherAvatarURL = otherAvatarURL;
+    }
+
+    public Long getGoodID() {
+        return goodID;
+    }
+
+    public void setGoodID(Long goodID) {
+        this.goodID = goodID;
+    }
+
+    public String getGoodTitle() {
+        return goodTitle;
+    }
+
+    public void setGoodTitle(String goodTitle) {
+        this.goodTitle = goodTitle;
+    }
+
+    public String getGoodPictureURL() {
+        return goodPictureURL;
+    }
+
+    public void setGoodPictureURL(String goodPictureURL) {
+        this.goodPictureURL = goodPictureURL;
     }
 
     public Date getLastestMessageTime() {

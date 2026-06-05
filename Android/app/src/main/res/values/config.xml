@@ -1,4 +1,4 @@
 <resources>
     <!-- 后端服务器地址 -->
-    <string name="base_url" translatable="false">http://192.168.237.231:8080</string>
+    <string name="base_url" translatable="false">http://10.209.157.231:8080</string>
 </resources>

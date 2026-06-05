@@ -268,8 +268,6 @@ CREATE TABLE alipay_account_binds (
     alipay_user_id VARCHAR(128) NOT NULL,
     alipay_login_id VARCHAR(128) NULL,
     nickname VARCHAR(64) NULL,
-    access_token VARCHAR(512) NULL,
-    refresh_token VARCHAR(512) NULL,
     bind_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

@@ -8,6 +8,7 @@ public class MessageVo{
     private Long receiverID;
     private String receiverNickname;
     private String receiverAvatarURL;
+    private Long goodID;
     private String messageContent;
     private Long sendTime;
 
@@ -65,6 +66,14 @@ public class MessageVo{
 
     public void setReceiverAvatarURL(String receiverAvatarURL) {
         this.receiverAvatarURL = receiverAvatarURL;
+    }
+
+    public Long getGoodID() {
+        return goodID;
+    }
+
+    public void setGoodID(Long goodID) {
+        this.goodID = goodID;
     }
 
     public String getMessageContent() {

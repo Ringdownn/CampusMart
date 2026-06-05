@@ -8,7 +8,7 @@ type MessageVo struct {
 	ReceiverID        int64  `json:"receiverID"`
 	ReceiverNickname  string `json:"receiverNickname"`
 	ReceiverAvatarURL string `json:"receiverAvatarURL"`
+	GoodID            int64  `json:"goodID"`
 	MessageContent    string `json:"messageContent"`
 	SendTime          int64  `json:"sendTime"`
 }
-

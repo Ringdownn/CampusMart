@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingTop="20dp"
+        android:paddingTop="30dp"
         android:gravity="center_vertical">
         <ImageView
             android:id="@+id/iv_back"
@@ -193,6 +193,45 @@
             android:inputType="textEmailAddress"
             android:paddingHorizontal="8dp"/>
         </LinearLayout>
+    <!-- 分割线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray"
+        android:layout_marginHorizontal="8dp"/>
+
+    <!-- 支付宝账号项 -->
+    <LinearLayout
+        android:id="@+id/layout_alipay_account"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="8dp">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/ubuntu_m"
+            android:text="Alipay account"
+            android:textSize="14sp"/>
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_bind_alipay"
+            android:layout_width="80dp"
+            android:layout_height="36dp"
+            android:text="Bind"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:fontFamily="@font/ubuntu_m"
+            android:textSize="14sp"
+            android:background="@drawable/btn_blue_rounded"/>
+    </LinearLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray"
+        android:layout_marginHorizontal="8dp"/>
+
     <!-- 保存按钮 -->
 
     <View

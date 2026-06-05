@@ -33,6 +33,7 @@ func main() {
 
 	minioEndpoint := envOrDefault("MINIO_ENDPOINT", "http://localhost:9000")
 	minioBucket := envOrDefault("MINIO_BUCKET", "campusmart")
+	appPublicBaseURL := envOrDefault("APP_PUBLIC_BASE_URL", "")
 
 	db, sqlDB, err := openDBFromEnv()
 	if err != nil {
@@ -48,7 +49,7 @@ func main() {
 	r.Use(gin.Recovery())
 	r.Use(middleware.CORS())
 
-	querySvc := service.NewMessageService(db, minioEndpoint, minioBucket, logger)
+	querySvc := service.NewMessageService(db, minioEndpoint, minioBucket, appPublicBaseURL, logger)
 	messageController := controller.NewMessageController(querySvc)
 
 	wsHandler := websocket.NewHTTPHandler(hub, messageRepo, logger)
@@ -85,6 +86,11 @@ func main() {
 }
 
 func registerToNacos(port string, logger *log.Logger) {
+	if !envBoolOrDefault("NACOS_REGISTER_ENABLED", true) {
+		logger.Printf("nacos registration disabled")
+		return
+	}
+
 	nacosServerAddr := os.Getenv("NACOS_SERVER_ADDR")
 	if nacosServerAddr == "" {
 		nacosServerAddr = "localhost:8848"
@@ -93,6 +99,7 @@ func registerToNacos(port string, logger *log.Logger) {
 
 	nacosNamespace := envOrDefault("NACOS_NAMESPACE", "campusmart")
 	nacosGroup := envOrDefault("NACOS_GROUP", "DEFAULT_GROUP")
+	nacosEphemeral := envBoolOrDefault("NACOS_EPHEMERAL", true)
 
 	sc := []constant.ServerConfig{
 		{
@@ -132,7 +139,7 @@ func registerToNacos(port string, logger *log.Logger) {
 		Weight:      1,
 		Enable:      true,
 		Healthy:     true,
-		Ephemeral:   true,
+		Ephemeral:   nacosEphemeral,
 	})
 	if err != nil {
 		logger.Printf("failed to register to nacos: %v", err)
@@ -211,6 +218,18 @@ func envOrDefault(key, def string) string {
 		return v
 	}
 	return def
+}
+
+func envBoolOrDefault(key string, def bool) bool {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return def
+	}
+	parsed, err := strconv.ParseBool(v)
+	if err != nil {
+		return def
+	}
+	return parsed
 }
 
 func parseLongQueryParam(r *http.Request, name string) (int64, bool) {

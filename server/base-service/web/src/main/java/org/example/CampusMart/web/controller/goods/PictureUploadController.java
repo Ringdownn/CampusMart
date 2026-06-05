@@ -11,6 +11,7 @@ import org.example.CampusMart.model.entity.Picture;
 import org.example.CampusMart.model.entity.User;
 import org.example.CampusMart.web.service.PictureService;
 import org.example.CampusMart.web.service.UserService;
+import org.example.CampusMart.web.support.MediaUrlBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,6 +33,9 @@ public class PictureUploadController {
     @Autowired
     private SearchEngineService searchEngineService;
 
+    @Autowired
+    private MediaUrlBuilder mediaUrlBuilder;
+
     @Operation(summary = "上传商品图片")
     @PostMapping("uploadGoodsPicture")
     public Result<String> uploadGoodsPicture(@RequestParam MultipartFile file,@RequestParam long GoodID){
@@ -47,7 +51,7 @@ public class PictureUploadController {
         picture.setGoodID(GoodID);
         pictureService.save(picture);
         searchEngineService.publishIndexUpdate(GoodID);
-        return Result.ok(url);
+        return Result.ok(mediaUrlBuilder.toPublicUrl(url));
     }
 
     @Operation(summary = "上传头像")
@@ -68,7 +72,7 @@ public class PictureUploadController {
 //        picture.setUserID(userID);
         user.setAvatarURL(url);
         userService.updateById(user);
-        return Result.ok(url);
+        return Result.ok(mediaUrlBuilder.toPublicUrl(url));
     }
 
 }

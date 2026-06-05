@@ -82,6 +82,18 @@ func (r *OrderRepository) FindByID(ctx context.Context, orderID int64) (*model.O
 	return &order, err
 }
 
+func (r *OrderRepository) FindLatestByGoodsAndParties(ctx context.Context, goodsID, buyerID, sellerID int64) (*model.Order, error) {
+	var order model.Order
+	err := r.db.WithContext(ctx).
+		Where("goods_id = ? AND buyer_id = ? AND seller_id = ? AND is_deleted = 0", goodsID, buyerID, sellerID).
+		Order("id DESC").
+		First(&order).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &order, err
+}
+
 func (r *OrderRepository) ListByBuyer(ctx context.Context, buyerID int64) ([]model.Order, error) {
 	var orders []model.Order
 	err := r.db.WithContext(ctx).

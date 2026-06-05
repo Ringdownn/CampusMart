@@ -22,7 +22,7 @@ func NewIndex(taggingProducer *producer.TaggingProducer) *Index {
 }
 
 func (index *Index) AddIndex(dbName string, doc *model.IndexDoc) error {
-	if doc.ImageURL != "" {
+	if doc.ImageURL != "" && len(doc.Tags) == 0 {
 		if err := index.taggingProducer.PublishTaggingTask(dbName, doc); err != nil {
 			log.Printf("发送到打标队列失败,docId: %d, error: %v", doc.Id, err)
 			return index.Container.GetDataBase(dbName).IndexDocument(doc)
@@ -48,7 +48,7 @@ func (index *Index) BatchAddIndex(dbName string, docs []*model.IndexDoc) error {
 
 	for _, doc := range docs {
 		var err error
-		if doc.ImageURL != "" {
+		if doc.ImageURL != "" && len(doc.Tags) == 0 {
 			err = index.taggingProducer.PublishTaggingTask(dbName, doc)
 			if err != nil {
 				log.Printf("发送到打标队列失败, docId: %d, error: %v", doc.Id, err)

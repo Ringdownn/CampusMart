@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/gob"
+	"encoding/json"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -53,6 +54,7 @@ func Decoder(data []byte, v interface{}) {
 func init() {
 	gob.Register([]interface{}{})
 	gob.Register(map[string]interface{}{})
+	gob.Register(json.Number(""))
 }
 
 const (
@@ -210,5 +212,10 @@ func ReleaseAssets(file fs.File, out string) {
 
 func ExtractEnglishWords(text string) []string {
 	reg := regexp.MustCompile("[a-zA-Z]+")
+	return reg.FindAllString(text, -1)
+}
+
+func ExtractNumberWords(text string) []string {
+	reg := regexp.MustCompile(`\d+`)
 	return reg.FindAllString(text, -1)
 }

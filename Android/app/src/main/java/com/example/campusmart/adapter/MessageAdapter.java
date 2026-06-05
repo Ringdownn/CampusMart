@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.campusmart.R;
+import com.example.campusmart.util.ImageUrlUtils;
 import com.example.campusmart.vo.RecentChatVo;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -36,7 +37,11 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHold
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         RecentChatVo chat = chatList.get(position);
         holder.tvUsername.setText(chat.getOtherNickname());
-        holder.tvContent.setText(chat.getLastestMessage());
+        if (chat.getGoodTitle() != null && !chat.getGoodTitle().isEmpty()) {
+            holder.tvContent.setText("[" + chat.getGoodTitle() + "] " + chat.getLastestMessage());
+        } else {
+            holder.tvContent.setText(chat.getLastestMessage());
+        }
 
         if (chat.getLastestMessageTime() != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("h:mm a", Locale.US);
@@ -45,9 +50,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHold
 
         String avatarUrl = chat.getOtherAvatarURL();
         if (avatarUrl != null && !avatarUrl.isEmpty()) {
-            if (!avatarUrl.startsWith("http")) {
-                avatarUrl = holder.itemView.getContext().getResources().getString(R.string.base_url) + avatarUrl;
-            }
+            avatarUrl = ImageUrlUtils.normalize(holder.itemView.getContext(), avatarUrl);
             Glide.with(holder.itemView.getContext())
                     .load(avatarUrl)
                     .placeholder(R.drawable.placeholder)

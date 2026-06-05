@@ -16,10 +16,11 @@ func NewMessageRepository(db *gorm.DB) *MessageRepository {
 	return &MessageRepository{db: db}
 }
 
-func (r *MessageRepository) Insert(ctx context.Context, senderID, receiverID int64, content string, sendTime time.Time) (int64, error) {
+func (r *MessageRepository) Insert(ctx context.Context, senderID, receiverID, goodID int64, content string, sendTime time.Time) (int64, error) {
 	rec := model.MessageRecord{
 		SenderID:       senderID,
 		ReceiverID:     receiverID,
+		GoodID:         goodID,
 		MessageContent: content,
 		SendTime:       sendTime,
 	}
@@ -28,4 +29,3 @@ func (r *MessageRepository) Insert(ctx context.Context, senderID, receiverID int
 	}
 	return rec.MessageID, nil
 }
-

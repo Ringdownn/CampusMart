@@ -144,65 +144,98 @@
             android:background="@android:color/darker_gray"
             android:layout_marginVertical="4dp"/>
 
-<!--        &lt;!&ndash; 历史订单 &ndash;&gt;-->
-<!--        <LinearLayout-->
-<!--            android:id="@+id/layout_history_purchase"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="56dp"-->
-<!--            android:paddingLeft="4pt"-->
-<!--            android:orientation="horizontal"-->
-<!--            android:layout_marginHorizontal="25dp"-->
-<!--            android:gravity="center_vertical"-->
-<!--            android:clickable="true"-->
-<!--            android:focusable="true">-->
-<!--            <TextView-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:fontFamily="@font/ubuntu_m"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:text="Historical purchase"-->
-<!--                android:textSize="16sp"/>-->
-<!--            <View-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="0dp"-->
-<!--                android:layout_weight="1"/>-->
-<!--            <ImageView-->
-<!--                android:layout_width="24dp"-->
-<!--                android:layout_height="24dp"-->
-<!--                android:src="@drawable/ic_list"/>-->
-<!--        </LinearLayout>-->
-<!--        <View-->
-<!--            android:layout_marginHorizontal="25dp"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="1dp"-->
-<!--            android:background="@android:color/darker_gray"-->
-<!--            android:layout_marginVertical="4dp"/>-->
+        <!-- 历史订单 -->
+        <LinearLayout
+            android:id="@+id/layout_history_purchase"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:paddingLeft="4pt"
+            android:orientation="horizontal"
+            android:layout_marginHorizontal="25dp"
+            android:gravity="center_vertical"
+            android:clickable="true"
+            android:focusable="true">
+            <TextView
+                android:layout_width="wrap_content"
+                android:fontFamily="@font/ubuntu_m"
+                android:layout_height="wrap_content"
+                android:text="Historical orders"
+                android:textSize="16sp"/>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_list"/>
+        </LinearLayout>
+        <View
+            android:layout_marginHorizontal="25dp"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"
+            android:layout_marginVertical="4dp"/>
 
-<!--        &lt;!&ndash; 收藏 &ndash;&gt;-->
-<!--        <LinearLayout-->
-<!--            android:id="@+id/layout_collection"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="56dp"-->
-<!--            android:orientation="horizontal"-->
-<!--            android:gravity="center_vertical"-->
-<!--            android:layout_marginHorizontal="25dp"-->
-<!--            android:paddingLeft="4pt"-->
-<!--            android:clickable="true"-->
-<!--            android:focusable="true">-->
-<!--            <TextView-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:fontFamily="@font/ubuntu_m"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:text="Collection"-->
-<!--                android:textSize="16sp"/>-->
-<!--            <View-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="0dp"-->
-<!--                android:layout_weight="1"/>-->
-<!--            <ImageView-->
-<!--                android:layout_width="24dp"-->
-<!--                android:layout_height="24dp"-->
-<!--                android:src="@drawable/ic_star"/>-->
-<!--        </LinearLayout>-->
+        <!-- 收藏 -->
+        <LinearLayout
+            android:id="@+id/layout_collection"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginHorizontal="25dp"
+            android:paddingLeft="4pt"
+            android:clickable="true"
+            android:focusable="true">
+            <TextView
+                android:layout_width="wrap_content"
+                android:fontFamily="@font/ubuntu_m"
+                android:layout_height="wrap_content"
+                android:text="Collections"
+                android:textSize="16sp"/>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_star"/>
+        </LinearLayout>
+        <View
+            android:layout_marginHorizontal="25dp"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"
+            android:layout_marginVertical="4dp"/>
+
+        <!-- 我的钱包 -->
+        <LinearLayout
+            android:id="@+id/layout_wallet"
+            android:layout_marginHorizontal="25dp"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:paddingLeft="4pt"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:clickable="true"
+            android:focusable="true">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/ubuntu_m"
+                android:text="My wallet"
+                android:textSize="16sp"/>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_wallet_money"/>
+        </LinearLayout>
     </LinearLayout>
     <View
         android:layout_width="match_parent"

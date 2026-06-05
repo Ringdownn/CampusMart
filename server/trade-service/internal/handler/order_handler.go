@@ -48,6 +48,28 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 	h.writeOrderResult(c, order, err)
 }
 
+func (h *OrderHandler) LatestOrderByGoods(c *gin.Context) {
+	userID, ok := h.currentUserID(c)
+	if !ok {
+		return
+	}
+	goodsID, ok := int64Query(c, "goodsId")
+	if !ok {
+		return
+	}
+	buyerID, ok := int64Query(c, "buyerId")
+	if !ok {
+		return
+	}
+	sellerID, ok := int64Query(c, "sellerId")
+	if !ok {
+		return
+	}
+
+	order, err := h.svc.GetLatestOrderByGoodsAndParties(c.Request.Context(), userID, goodsID, buyerID, sellerID)
+	h.writeOrderResult(c, order, err)
+}
+
 func (h *OrderHandler) BuyerOrders(c *gin.Context) {
 	userID, ok := h.currentUserID(c)
 	if !ok {
@@ -134,4 +156,13 @@ func orderIDParam(c *gin.Context) (int64, bool) {
 		return 0, false
 	}
 	return orderID, true
+}
+
+func int64Query(c *gin.Context, name string) (int64, bool) {
+	value, err := strconv.ParseInt(c.Query(name), 10, 64)
+	if err != nil || value <= 0 {
+		c.JSON(http.StatusBadRequest, result.Result[any]{Code: 202, Message: "参数不正确", Data: nil})
+		return 0, false
+	}
+	return value, true
 }

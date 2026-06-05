@@ -17,6 +17,7 @@ import com.bumptech.glide.Glide;
 import com.example.campusmart.R;
 import com.example.campusmart.entity.User;
 import com.example.campusmart.result.Result;
+import com.example.campusmart.util.ImageUrlUtils;
 import com.google.gson.Gson;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -55,6 +56,7 @@ public class PersonalInfoActivity extends AppCompatActivity {
         etEmail = findViewById(R.id.et_email);
         ivAvatar = findViewById(R.id.iv_avatar);
         Button btnSave = findViewById(R.id.btn_save);
+        Button btnBindAlipay = findViewById(R.id.btn_bind_alipay);
 
         // 初始化网络工具
         BASE_URL = getResources().getString(R.string.base_url);
@@ -68,6 +70,11 @@ public class PersonalInfoActivity extends AppCompatActivity {
         ivAvatar.setOnClickListener(v -> openGallery());
 
         btnSave.setOnClickListener(v -> savePersonalInfo());
+
+        btnBindAlipay.setOnClickListener(v -> {
+            Intent intent = new Intent(PersonalInfoActivity.this, AlipayBindActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void loadLocalUserInfo() {
@@ -80,7 +87,7 @@ public class PersonalInfoActivity extends AppCompatActivity {
         etPhone.setText(String.valueOf(sp.getLong("phone", 0)).replaceFirst("(\\d{3})(\\d{4})(\\d{4})", "$1-$2-$3"));
         etEmail.setText(sp.getString("email", ""));
 
-        String avatarUrl = sp.getString("avatar_url", "");
+        String avatarUrl = ImageUrlUtils.normalize(this, sp.getString("avatar_url", ""));
         if (!avatarUrl.isEmpty()) {
             Glide.with(this)
                     .load(avatarUrl)
@@ -167,7 +174,7 @@ public class PersonalInfoActivity extends AppCompatActivity {
 
                     if (result.getCode() == 200) {
                         SharedPreferences sp = getSharedPreferences("user_info", MODE_PRIVATE);
-                        sp.edit().putString("avatar_url", result.getData()).apply();
+                        sp.edit().putString("avatar_url", ImageUrlUtils.normalize(PersonalInfoActivity.this, result.getData())).apply();
 
                         runOnUiThread(() ->
                                 Toast.makeText(PersonalInfoActivity.this, "头像更新成功", Toast.LENGTH_SHORT).show()

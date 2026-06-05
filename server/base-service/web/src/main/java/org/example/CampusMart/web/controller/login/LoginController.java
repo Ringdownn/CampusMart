@@ -8,6 +8,7 @@ import org.example.CampusMart.common.login.LoginUserHolder;
 import org.example.CampusMart.common.result.Result;
 import org.example.CampusMart.model.entity.User;
 import org.example.CampusMart.web.service.UserService;
+import org.example.CampusMart.web.support.MediaUrlBuilder;
 import org.example.CampusMart.web.vo.LoginVo;
 import org.example.CampusMart.web.vo.RegisterVo;
 import org.springframework.beans.BeanUtils;
@@ -20,6 +21,9 @@ import org.springframework.web.bind.annotation.*;
 public class LoginController {
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private MediaUrlBuilder mediaUrlBuilder;
 
     @Operation(summary = "用户登录")
     @PostMapping("/login")
@@ -41,6 +45,9 @@ public class LoginController {
     public Result<User> getLoginUserInfo() {
         Long id = LoginUserHolder.getLoginUser().getUserId();
         User user = userService.getById(id);
+        if (user != null) {
+            user.setAvatarURL(mediaUrlBuilder.toPublicUrl(user.getAvatarURL()));
+        }
         return Result.ok(user);
     }
 }

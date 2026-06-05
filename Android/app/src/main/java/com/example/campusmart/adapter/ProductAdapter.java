@@ -15,6 +15,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.campusmart.GoodsDetailActivity;
 import com.example.campusmart.R;
+import com.example.campusmart.util.ImageUrlUtils;
 
 import java.util.List;
 
@@ -71,9 +72,11 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
         Context context = holder.itemView.getContext();
         int placeholder = product.imageRes > 0 ? product.imageRes : R.drawable.placeholder;
+        String imageUrl = ImageUrlUtils.normalize(context, product.imageUrl);
+        String avatarUrl = ImageUrlUtils.normalize(context, product.avatarUrl);
 
         Glide.with(holder.ivProduct.getContext())
-                .load(product.imageUrl)
+                .load(imageUrl)
                 .apply(PRODUCT_OPTIONS)
                 .placeholder(placeholder)
                 .error(R.drawable.placeholder)
@@ -82,7 +85,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
         int avatarPlaceholder = product.avatarRes > 0 ? product.avatarRes : R.drawable.avatar_placeholder;
         Glide.with(holder.ivAvatar.getContext())
-                .load(product.avatarUrl)
+                .load(avatarUrl)
                 .apply(AVATAR_OPTIONS)
                 .placeholder(avatarPlaceholder)
                 .error(R.drawable.avatar_placeholder)
@@ -94,9 +97,9 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, GoodsDetailActivity.class);
             intent.putExtra("product_title", product.title);
-            intent.putExtra("product_image_url", product.imageUrl);
+            intent.putExtra("product_image_url", imageUrl);
             intent.putExtra("product_publisher", product.publisher);
-            intent.putExtra("product_avatar_url", product.avatarUrl);
+            intent.putExtra("product_avatar_url", avatarUrl);
             intent.putExtra("product_good_id", product.goodID);
             context.startActivity(intent);
         });

@@ -19,6 +19,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import com.bumptech.glide.Glide;
 import com.example.campusmart.result.Result;
+import com.example.campusmart.util.ImageUrlUtils;
 import com.example.campusmart.vo.GoodsVo;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -137,7 +138,7 @@ public class UpdateActivity extends AppCompatActivity {
 
                             if (goods.getPictureURL() != null && !goods.getPictureURL().isEmpty()) {
                                 Glide.with(UpdateActivity.this)
-                                        .load(goods.getPictureURL())
+                                        .load(ImageUrlUtils.normalize(UpdateActivity.this, goods.getPictureURL()))
                                         .placeholder(R.drawable.ic_add_pic)
                                         .error(R.drawable.ic_add_pic)
                                         .into(ivAddPic);

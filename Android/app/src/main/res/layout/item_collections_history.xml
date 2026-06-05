@@ -84,16 +84,16 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
         <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btn_delete"
+            android:id="@+id/btn_detail"
             android:layout_width="60dp"
             android:layout_height="32dp"
             android:textAllCaps="false"
-            android:text="delete"
+            android:text="detail"
             android:layout_marginTop="50dp"
             android:fontFamily="@font/ubuntu_m"
             android:textSize="12sp"
             android:textColor="@android:color/white"
-            android:background="@drawable/btn_red_rounded"/>
+            android:background="@drawable/btn_blue_rounded"/>
     </LinearLayout>
 
 </LinearLayout>

@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.campusmart.R;
+import com.example.campusmart.util.ImageUrlUtils;
 import java.util.List;
 
 public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -46,7 +47,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         if (holder instanceof OtherViewHolder) {
             ((OtherViewHolder) holder).tvOtherMsg.setText(msg.content);
             Glide.with(holder.itemView.getContext())
-                    .load(otherAvatarUrl)
+                    .load(ImageUrlUtils.normalize(holder.itemView.getContext(), otherAvatarUrl))
                     .placeholder(R.drawable.avatar_slow)
                     .error(R.drawable.avatar_slow)
                     .circleCrop()
@@ -54,7 +55,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         } else {
             ((SelfViewHolder) holder).tvSelfMsg.setText(msg.content);
             Glide.with(holder.itemView.getContext())
-                    .load(selfAvatarUrl)
+                    .load(ImageUrlUtils.normalize(holder.itemView.getContext(), selfAvatarUrl))
                     .placeholder(R.drawable.placeholder)
                     .error(R.drawable.placeholder)
                     .circleCrop()

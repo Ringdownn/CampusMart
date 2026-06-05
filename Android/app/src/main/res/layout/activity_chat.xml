@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/chat_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -31,6 +32,73 @@
             android:textStyle="bold"
             android:gravity="center"/>
     </LinearLayout>
+
+    <!-- 商品信息栏 -->
+    <LinearLayout
+        android:id="@+id/layout_goods_info"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/rounded_item_bg"
+        android:padding="8dp"
+        android:layout_marginBottom="8dp">
+        <!-- 商品图片 -->
+        <ImageView
+            android:id="@+id/iv_goods_img"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@drawable/placeholder"
+            android:scaleType="centerCrop"/>
+        <!-- 商品名称+价格 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+            <TextView
+                android:id="@+id/tv_goods_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/ubuntu_b"
+                android:text="Good name"
+                android:textSize="15sp"
+                android:maxLines="1"
+                android:ellipsize="end"/>
+            <TextView
+                android:id="@+id/tv_goods_price"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="¥ 699.00"
+                android:textColor="#E91E63"
+                android:textSize="14sp"
+                android:fontFamily="@font/ubuntu_m"
+                android:layout_marginTop="4dp"/>
+        </LinearLayout>
+        <!-- 操作按钮/状态文本 -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_goods_action"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:textAllCaps="false"
+            android:text="Buy it!"
+            android:textColor="@android:color/white"
+            android:fontFamily="@font/ubuntu_m"
+            android:textSize="13sp"
+            android:paddingHorizontal="16dp"
+            android:background="@drawable/btn_red_rounded"/>
+        <TextView
+            android:id="@+id/tv_goods_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Waiting payment"
+            android:textSize="13sp"
+            android:fontFamily="@font/ubuntu_m"
+            android:textColor="#757575"
+            android:visibility="gone"/>
+    </LinearLayout>
+
     <!-- 消息列表RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_chat"

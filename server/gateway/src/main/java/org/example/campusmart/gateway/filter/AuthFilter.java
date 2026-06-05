@@ -27,6 +27,7 @@ public class AuthFilter implements GlobalFilter, Ordered {
         "/app/goods/page",
         "/app/goods/search",
         "/app/goods/selectById",
+        "/app/files",
         "/app/messages/list",
         "/app/messages/recent",
         "/app/payments/alipay/notify"

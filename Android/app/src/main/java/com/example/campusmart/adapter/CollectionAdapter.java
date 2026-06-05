@@ -8,6 +8,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.bumptech.glide.Glide;
 import com.example.campusmart.R;
 import java.util.List;
 
@@ -18,6 +19,8 @@ public class CollectionAdapter extends RecyclerView.Adapter<CollectionAdapter.Go
         public String desc;
         public String newDegree;
         public String price;
+        public String pictureURL;
+        public Long goodId;
 
         public Goods(int imgRes, String title, String desc, String newDegree, String price) {
             this.imgRes = imgRes;
@@ -28,16 +31,25 @@ public class CollectionAdapter extends RecyclerView.Adapter<CollectionAdapter.Go
         }
     }
 
+    public interface ImageLoader {
+        void loadImage(ImageView imageView, String url);
+    }
+
     private List<Goods> goodsList;
     private OnButtonClickListener listener;
+    private ImageLoader imageLoader;
 
     public interface OnButtonClickListener {
-        void onDeleteClick(int position);
+        void onDetailClick(int position);
     }
 
     public CollectionAdapter(List<Goods> goodsList, OnButtonClickListener listener) {
         this.goodsList = goodsList;
         this.listener = listener;
+    }
+
+    public void setImageLoader(ImageLoader imageLoader) {
+        this.imageLoader = imageLoader;
     }
 
     @NonNull
@@ -51,12 +63,18 @@ public class CollectionAdapter extends RecyclerView.Adapter<CollectionAdapter.Go
     @Override
     public void onBindViewHolder(@NonNull GoodsViewHolder holder, int position) {
         Goods goods = goodsList.get(position);
-        holder.ivGoodsImg.setImageResource(goods.imgRes);
+
+        if (goods.pictureURL != null && !goods.pictureURL.isEmpty() && imageLoader != null) {
+            imageLoader.loadImage(holder.ivGoodsImg, goods.pictureURL);
+        } else {
+            holder.ivGoodsImg.setImageResource(goods.imgRes);
+        }
+
         holder.tvTitle.setText(goods.title);
         holder.tvDesc.setText(goods.desc);
         holder.tvNewDegree.setText(goods.newDegree);
         holder.tvPrice.setText(goods.price);
-        holder.btnDelete.setOnClickListener(v -> listener.onDeleteClick(position));
+        holder.btnDetail.setOnClickListener(v -> listener.onDetailClick(position));
     }
 
     @Override
@@ -67,7 +85,7 @@ public class CollectionAdapter extends RecyclerView.Adapter<CollectionAdapter.Go
     static class GoodsViewHolder extends RecyclerView.ViewHolder {
         ImageView ivGoodsImg;
         TextView tvTitle, tvDesc, tvNewDegree, tvPrice;
-        Button btnDelete;
+        Button btnDetail;
 
         public GoodsViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -76,7 +94,7 @@ public class CollectionAdapter extends RecyclerView.Adapter<CollectionAdapter.Go
             tvDesc = itemView.findViewById(R.id.tv_desc);
             tvNewDegree = itemView.findViewById(R.id.tv_new_degree);
             tvPrice = itemView.findViewById(R.id.tv_price);
-            btnDelete = itemView.findViewById(R.id.btn_delete);
+            btnDetail = itemView.findViewById(R.id.btn_detail);
         }
     }
 }

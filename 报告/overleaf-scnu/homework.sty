@@ -1,0 +1,149 @@
+% Template style configuration
+
+%
+% Package imports
+%
+\usepackage{fancyhdr}  % Header and footer settings
+\usepackage{extramarks}
+\usepackage{amsmath}  % Math formulas
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tikz}
+%\usepackage{tikz-feynman} 
+\usepackage{amsthm}
+\usepackage{makecell}
+\usepackage{amsfonts}
+\usepackage{tikz}  % Drawing
+\usepackage{algorithm}  % Algorithms
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}  % Pseudocode
+\usepackage{multirow}  % Multi-row tables
+\usepackage{float}  % Force figures to appear at the current position
+\usepackage{enumitem}  % List indentation
+\usepackage{listings}  % Code blocks
+
+\usetikzlibrary{automata,positioning}
+
+
+%
+% Page settings
+%
+\topmargin=-0.80in
+\evensidemargin=-0.40in
+\oddsidemargin=-0.40in
+\textwidth=7.30in
+\textheight=9.85in
+\headsep=0.18in
+\setlength{\headheight}{14pt}
+\setlength{\footskip}{18pt}
+
+\linespread{1.1}
+
+\renewcommand\headrulewidth{0pt}
+\renewcommand\footrulewidth{0pt}
+
+\setlength\parindent{0pt}
+\setlength\parskip{0pt}
+\setlist{topsep=1pt,itemsep=0pt,parsep=0pt,partopsep=0pt}
+
+
+%
+% Configure headers and footers with fancyhdr
+% 
+\pagestyle{fancy}
+\fancyhead{}
+%\chead{\hmwkClass\ (\hmwkClassInstructor\ \hmwkClassTime): \hmwkTitle}
+%\chead{\hmwkClass\ : \hmwkTitle}
+%\rhead{\firstxmark}
+%\lfoot{\lastxmark}
+\cfoot{\thepage}
+
+
+
+%
+% %%%%%%%%%%%%%%   Custom commands   %%%%%%%%%%%%%%
+%
+
+% Homework Problem command settings
+\newcommand{\enterProblemHeader}[1]{
+	\nobreak\extramarks{}{Problem \arabic{#1} continued on next page\ldots}\nobreak{}
+	\nobreak\extramarks{Problem \arabic{#1} (continued)}{Problem \arabic{#1} continued on next page\ldots}\nobreak{}
+}
+
+\newcommand{\exitProblemHeader}[1]{
+	\nobreak\extramarks{Problem \arabic{#1} (continued)}{Problem \arabic{#1} continued on next page\ldots}\nobreak{}
+	\stepcounter{#1}
+	\nobreak\extramarks{Problem \arabic{#1}}{}\nobreak{}
+}
+
+\setcounter{secnumdepth}{0}
+\newcounter{partCounter}
+\newcounter{homeworkProblemCounter}
+\setcounter{homeworkProblemCounter}{1}
+\nobreak\extramarks{Problem \arabic{homeworkProblemCounter}}{}\nobreak{}
+
+% Homework Problem Environment
+% This environment accepts an optional problem number. If provided, that number is used; otherwise it is generated automatically.
+\newenvironment{homeworkProblem}[1][-1]{
+	\ifnum#1>0
+	\setcounter{homeworkProblemCounter}{#1}
+	\fi
+	% Problem headings are hidden because the report uses Q0/Q1/Q2 section titles.
+	\setcounter{partCounter}{1}
+	\enterProblemHeader{homeworkProblemCounter}
+}{
+	\exitProblemHeader{homeworkProblemCounter}
+}
+
+% Cover page command settings
+% 	- Title
+% 	- Subtitle
+% 	- Course name
+% 	- Instructor
+% 	- Student information
+\newcommand{\hmwkTitle}{Catch Turtle All}
+%\newcommand{\hmwkDueDate}{November 18, 2019}
+\newcommand{\hmwkSubTitle}{Group4 Project Report}
+\newcommand{\hmwkClass}{ROS2 Robot Development}
+\newcommand{\hmwkCompleteTime}{\today}
+\newcommand{\hmwkClassInstructor}{}
+\newcommand{\hmwkAuthorName}{LAOSIKAI 50091097}
+\newcommand{\hmwMajor}{Computer Science}
+\newcommand{\hmwNumber}{}
+
+
+% Useful document commands
+% Useful for algorithms
+\newcommand{\alg}[1]{\textsc{\bfseries \footnotesize #1}}
+
+% For derivatives
+\newcommand{\deriv}[1]{\frac{\mathrm{d}}{\mathrm{d}x} (#1)}
+
+% For partial derivatives
+\newcommand{\pderiv}[2]{\frac{\partial}{\partial #1} (#2)}
+
+% Integral dx
+\newcommand{\dx}{\mathrm{d}x}
+
+% Alias for the Solution section header
+\newcommand{\solution}{\textbf{\large Solution}}
+
+% Probability commands: Expectation, Variance, Covariance, Bias
+\newcommand{\E}{\mathrm{E}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\Bias}{\mathrm{Bias}}
+
+% Line breaks in table cells
+% Usage: \tabincell{c}{Cell content 1 \\ Cell content 2}
+% 		- c means centered
+%		- \\ means line break
+\newcommand{\tabincell}[2]{\begin{tabular}{@{}#1@{}}#2\end{tabular}}
+
+
+%
+% Replace \Require with Input and \Ensure with Output in algorithms
+%
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}  % Use Input in the format of Algorithm
+\renewcommand{\algorithmicensure}{\textbf{Output:}} % Use Output in the format of Algorithm
+

@@ -21,6 +21,8 @@ import com.example.campusmart.LoginActivity;
 import com.example.campusmart.MyGoodsActivity;
 import com.example.campusmart.PersonalInfoActivity;
 import com.example.campusmart.R;
+import com.example.campusmart.WalletActivity;
+import com.example.campusmart.util.ImageUrlUtils;
 
 public class UserFragment extends Fragment {
     private TextView tvNickname;
@@ -38,14 +40,21 @@ public class UserFragment extends Fragment {
 
 
         LinearLayout layoutPersonalInfo = view.findViewById(R.id.layout_personal_info);
+        LinearLayout layoutWallet = view.findViewById(R.id.layout_wallet);
         LinearLayout layoutMyGoods = view.findViewById(R.id.layout_my_goods);
-//        LinearLayout layoutHistoryPurchase = view.findViewById(R.id.layout_history_purchase);
-//        LinearLayout layoutCollection = view.findViewById(R.id.layout_collection);
+        LinearLayout layoutHistoryPurchase = view.findViewById(R.id.layout_history_purchase);
+        LinearLayout layoutCollection = view.findViewById(R.id.layout_collection);
         Button btnLogout = view.findViewById(R.id.btn_logout);
 
         // 个人信息点击事件
         layoutPersonalInfo.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), PersonalInfoActivity.class);
+            startActivity(intent);
+        });
+
+        // 我的钱包点击事件
+        layoutWallet.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), WalletActivity.class);
             startActivity(intent);
         });
 
@@ -55,17 +64,17 @@ public class UserFragment extends Fragment {
             startActivity(intent);
         });
 
-//        // 历史订单点击事件
-//        layoutHistoryPurchase.setOnClickListener(v -> {
-//            Intent intent = new Intent(getActivity(), HistoricalPurchaseActivity.class);
-//            startActivity(intent);
-//        });
-//
-//        // 收藏点击事件
-//        layoutCollection.setOnClickListener(v -> {
-//            Intent intent = new Intent(getActivity(), CollectionActivity.class);
-//            startActivity(intent);
-//        });
+        // 收藏点击事件
+        layoutCollection.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), CollectionActivity.class);
+            startActivity(intent);
+        });
+
+        // 历史订单点击事件
+        layoutHistoryPurchase.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), HistoricalPurchaseActivity.class);
+            startActivity(intent);
+        });
 
         btnLogout.setOnClickListener(v -> {
             clearUserInfo();
@@ -91,7 +100,7 @@ public class UserFragment extends Fragment {
         SharedPreferences sp = getActivity().getSharedPreferences("user_info", getActivity().MODE_PRIVATE);
         String nickname = sp.getString("nickname", "User"); // 默认值
         String signature = sp.getString("profile_signature", "Nice to meet you");
-        String avatarUrl = sp.getString("avatar_url", "");
+        String avatarUrl = ImageUrlUtils.normalize(requireContext(), sp.getString("avatar_url", ""));
 
         tvNickname.setText(nickname);
         tvProfileSignature.setText(signature);

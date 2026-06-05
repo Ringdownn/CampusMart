@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingTop="25dp"
+    android:paddingTop="35dp"
     android:background="@android:color/white">
     <!-- 返回按钮 -->
     <ImageView
@@ -32,13 +32,52 @@
         android:paddingHorizontal="16dp"
         android:background="#F8F8F8">
         <!-- 点赞按钮 -->
-        <ImageView
-            android:id="@+id/iv_like"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_like"
-            android:layout_marginStart="10dp"
-            android:clickable="true"/>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginStart="10dp">
+            <ImageView
+                android:id="@+id/iv_like"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_like"
+                android:clickable="true"/>
+            <TextView
+                android:id="@+id/tv_like_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="11sp"
+                android:fontFamily="@font/ubuntu_m"
+                android:textColor="#757575"
+                android:layout_marginTop="2dp"/>
+        </LinearLayout>
+
+        <!-- 收藏按钮 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginStart="24dp">
+            <ImageView
+                android:id="@+id/iv_collection"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_star"
+                android:clickable="true"/>
+            <TextView
+                android:id="@+id/tv_collection_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="11sp"
+                android:fontFamily="@font/ubuntu_m"
+                android:textColor="#757575"
+                android:layout_marginTop="2dp"/>
+        </LinearLayout>
 
         <View
             android:layout_width="match_parent"

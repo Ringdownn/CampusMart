@@ -51,6 +51,16 @@ public class GoodsController {
         return Result.ok(list);
     }
 
+    @Operation(summary = "根据发布者ID查询商品列表（时间顺序）")
+    @GetMapping("/poster")
+    public Result<IPage<GoodsVo>> searchGoodsByPoster(@RequestParam long current, @RequestParam long size, @RequestParam Long posterId) {
+        IPage<GoodsVo> page = new Page<>(current, size);
+        LambdaQueryWrapper<Goods> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Goods::getPublishUserID, posterId);
+        IPage<GoodsVo> list = goodsService.searchGoodsByPublisherId(page, queryWrapper);
+        return Result.ok(list);
+    }
+
     @Operation(summary = "根据商品ID查询商品详情")
     @GetMapping("/selectById")
     public Result<Goods> getGoodsById(@RequestParam Long id) {

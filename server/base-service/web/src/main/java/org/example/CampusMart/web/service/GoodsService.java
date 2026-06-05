@@ -24,4 +24,6 @@ public interface GoodsService extends IService<Goods> {
     String getGoodsPictureURL(Long goodsId);
 
     Map<String, Object> getUserInfo(Long userId);
+
+    IPage<GoodsVo> searchCollectedGoodsByUserId(IPage<GoodsVo> page, Long userId);
 }

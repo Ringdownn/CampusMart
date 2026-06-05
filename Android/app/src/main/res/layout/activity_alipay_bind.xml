@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/white">
+
+    <!-- 顶部返回栏+标题 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="66dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="23dp"
+        android:background="#2196F3">
+        <ImageView
+            android:id="@+id/iv_back"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_back_white"
+            android:layout_marginStart="16dp"
+            android:clickable="true"/>
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Bind Alipay"
+            android:textSize="18sp"
+            android:layout_marginRight="20dp"
+            android:fontFamily="@font/ubuntu_m"
+            android:textColor="@android:color/white"
+            android:gravity="center"/>
+    </LinearLayout>
+
+    <!-- 头像区域 -->
+    <ImageView
+        android:id="@+id/iv_avatar"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="40dp"
+        android:src="@drawable/avatar_marry"
+        android:background="@drawable/shape_circle"
+        android:scaleType="centerCrop"/>
+
+    <!-- 支付宝账号输入框 -->
+    <EditText
+        android:id="@+id/et_alipay_account"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginTop="48dp"
+        android:hint="Alipay account"
+        android:textSize="14sp"
+        android:fontFamily="@font/ubuntu_m"
+        android:background="@drawable/rounded_edittext_bg"
+        android:paddingHorizontal="16dp"/>
+
+    <!-- 手机号输入框 -->
+    <EditText
+        android:id="@+id/et_phone"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginTop="24dp"
+        android:hint="Phone number"
+        android:textSize="14sp"
+        android:fontFamily="@font/ubuntu_m"
+        android:background="@drawable/rounded_edittext_bg"
+        android:paddingHorizontal="16dp"
+        android:inputType="phone"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+    <!-- 绑定按钮 -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:textAllCaps="false"
+        android:id="@+id/btn_bind"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Bind Alipay"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:fontFamily="@font/ubuntu_m"
+        android:background="@drawable/btn_grey_rounded"
+        android:layout_marginHorizontal="55dp"
+        android:layout_marginBottom="60dp"/>
+
+</LinearLayout>

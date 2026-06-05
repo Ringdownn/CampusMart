@@ -36,6 +36,7 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
                         "/app/goods/page",
                         "/app/goods/search",
                         "/app/goods/selectById",
+                        "/app/files/**",
                         "/app/messages/list",
                         "/app/messages/recent"
 

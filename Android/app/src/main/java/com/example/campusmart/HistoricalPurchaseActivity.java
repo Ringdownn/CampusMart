@@ -1,22 +1,45 @@
 package com.example.campusmart;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.example.campusmart.R;
-import com.example.campusmart.adapter.HistoricalPurchaseAdapter;
 
+import com.bumptech.glide.Glide;
+import com.example.campusmart.adapter.HistoricalPurchaseAdapter;
+import com.example.campusmart.entity.Goods;
+import com.example.campusmart.result.Result;
+import com.example.campusmart.util.ImageUrlUtils;
+import com.example.campusmart.vo.OrderVo;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HistoricalPurchaseActivity extends AppCompatActivity implements HistoricalPurchaseAdapter.OnDeleteClickListener {
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+public class HistoricalPurchaseActivity extends AppCompatActivity implements HistoricalPurchaseAdapter.OnDetailClickListener {
     private RecyclerView rvHistoricalPurchase;
     private HistoricalPurchaseAdapter adapter;
     private List<HistoricalPurchaseAdapter.Purchase> purchaseList;
+    private OkHttpClient client;
+    private Gson gson;
+    private String baseUrl;
+    private String token;
+    private long userId;
+    private boolean firstResume = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,53 +50,212 @@ public class HistoricalPurchaseActivity extends AppCompatActivity implements His
         ImageView ivBack = findViewById(R.id.iv_back);
         rvHistoricalPurchase = findViewById(R.id.rv_collection_history);
 
-        // 初始化订单数据
-        initPurchaseData();
-        // 初始化RecyclerView
-        adapter = new HistoricalPurchaseAdapter(purchaseList, this);
-        rvHistoricalPurchase.setLayoutManager(new LinearLayoutManager(this));
-        rvHistoricalPurchase.setAdapter(adapter);
+        initNetwork();
+        initRecyclerView();
+        loadOrders();
 
         // 返回按钮点击事件
         ivBack.setOnClickListener(v -> finish());
     }
 
-    // 初始化订单模拟数据
-    private void initPurchaseData() {
-        purchaseList = new ArrayList<>();
-        // 添加书籍订单
-        purchaseList.add(new HistoricalPurchaseAdapter.Purchase(
-                R.drawable.placeholder,
-                "book",
-                "I'm about to graduate and have found quite a few idle books.",
-                "70% new",
-                "¥ 30"
-        ));
-        // 添加键盘订单
-        purchaseList.add(new HistoricalPurchaseAdapter.Purchase(
-                R.drawable.keyboard,
-                "99% new keyboard",
-                "Wooting magnetic axis keyboard. I just bought it last week. It's too ugly",
-                "99% new",
-                "¥ 699"
-        ));
-        // 添加鼠标订单
-        purchaseList.add(new HistoricalPurchaseAdapter.Purchase(
-                R.drawable.mouse,
-                "Has anyone bought my mouse?",
-                "I'm about to graduate and have found quite a few idle books.",
-                "80% new",
-                "¥ 280"
-        ));
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (firstResume) {
+            firstResume = false;
+            return;
+        }
+        if (adapter != null) {
+            loadOrders();
+        }
     }
 
-    // 删除按钮点击回调
+    private void initNetwork() {
+        client = new OkHttpClient();
+        gson = new Gson();
+        baseUrl = getResources().getString(R.string.base_url);
+
+        SharedPreferences sp = getSharedPreferences("user_info", MODE_PRIVATE);
+        token = sp.getString("token", "");
+        userId = sp.getLong("user_id", 0);
+    }
+
+    private void initRecyclerView() {
+        purchaseList = new ArrayList<>();
+        adapter = new HistoricalPurchaseAdapter(purchaseList, this);
+        adapter.setImageLoader((imageView, url) -> {
+            if (url != null && !url.isEmpty()) {
+                Glide.with(HistoricalPurchaseActivity.this)
+                        .load(ImageUrlUtils.normalize(HistoricalPurchaseActivity.this, url))
+                        .placeholder(R.drawable.placeholder)
+                        .error(R.drawable.placeholder)
+                        .centerCrop()
+                        .into(imageView);
+            }
+        });
+        rvHistoricalPurchase.setLayoutManager(new LinearLayoutManager(this));
+        rvHistoricalPurchase.setAdapter(adapter);
+    }
+
+    private void loadOrders() {
+        if (userId == 0 || token.isEmpty()) {
+            Toast.makeText(this, "Please login first", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        Request request = new Request.Builder()
+                .url(baseUrl + "/app/orders/buyer")
+                .addHeader("access-token", token)
+                .get()
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() -> Toast.makeText(HistoricalPurchaseActivity.this, "Load orders failed", Toast.LENGTH_SHORT).show());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String responseData = response.body() != null ? response.body().string() : "";
+                Type type = new TypeToken<Result<List<OrderVo>>>() {
+                }.getType();
+                Result<List<OrderVo>> result = parseResult(responseData, type);
+
+                runOnUiThread(() -> {
+                    if (response.isSuccessful() && result != null && result.getCode() == 200 && result.getData() != null) {
+                        updateOrders(result.getData());
+                    } else {
+                        Toast.makeText(HistoricalPurchaseActivity.this, "Load orders failed", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
+    }
+
+    private void updateOrders(List<OrderVo> orders) {
+        purchaseList.clear();
+        for (OrderVo order : orders) {
+            HistoricalPurchaseAdapter.Purchase purchase = new HistoricalPurchaseAdapter.Purchase(
+                    R.drawable.placeholder,
+                    order.getOrderId(),
+                    order.getGoodsId(),
+                    "Order " + safe(order.getOrderNo()),
+                    "Created: " + formatTime(order.getCreateTime()),
+                    "",
+                    "¥ " + formatAmount(order.getAmount()),
+                    displayStatus(order.getStatus())
+            );
+            purchaseList.add(purchase);
+            loadGoodsForOrder(purchase);
+        }
+        adapter.notifyDataSetChanged();
+
+        if (orders.isEmpty()) {
+            Toast.makeText(this, "No purchase history", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void loadGoodsForOrder(HistoricalPurchaseAdapter.Purchase purchase) {
+        if (purchase.goodsId == null || purchase.goodsId <= 0) {
+            return;
+        }
+
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(baseUrl + "/app/goods/selectById?id=" + purchase.goodsId)
+                .get();
+        if (token != null && !token.isEmpty()) {
+            requestBuilder.addHeader("access-token", token);
+        }
+
+        client.newCall(requestBuilder.build()).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String responseData = response.body() != null ? response.body().string() : "";
+                Result<Goods> result = parseResult(responseData, new TypeToken<Result<Goods>>() {
+                }.getType());
+
+                if (response.isSuccessful() && result != null && result.getCode() == 200 && result.getData() != null) {
+                    Goods goods = result.getData();
+                    runOnUiThread(() -> {
+                        if (goods.getTitle() != null && !goods.getTitle().isEmpty()) {
+                            purchase.title = goods.getTitle();
+                        }
+                        if (goods.getItemDescription() != null && !goods.getItemDescription().isEmpty()) {
+                            purchase.desc = goods.getItemDescription();
+                        }
+                        adapter.notifyDataSetChanged();
+                    });
+                }
+            }
+        });
+    }
+
+    // 详情按钮点击回调
     @Override
-    public void onDeleteClick(int position) {
-        // 从列表中移除订单并刷新适配器
-        purchaseList.remove(position);
-        adapter.notifyItemRemoved(position);
-        adapter.notifyItemRangeChanged(position, purchaseList.size());
-        Toast.makeText(this, "delete successful", Toast.LENGTH_SHORT).show();
+    public void onDetailClick(int position) {
+        if (position < 0 || position >= purchaseList.size()) {
+            return;
+        }
+        HistoricalPurchaseAdapter.Purchase purchase = purchaseList.get(position);
+        if (purchase.orderId == null || purchase.orderId <= 0) {
+            Toast.makeText(this, "Invalid order", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(this, OrderDetailActivity.class);
+        intent.putExtra("orderId", purchase.orderId);
+        intent.putExtra("goodTitle", purchase.title);
+        if (purchase.pictureURL != null && !purchase.pictureURL.isEmpty()) {
+            intent.putExtra("goodImageUrl", ImageUrlUtils.normalize(this, purchase.pictureURL));
+        }
+        startActivity(intent);
+    }
+
+    private <T> Result<T> parseResult(String responseData, Type type) {
+        try {
+            return gson.fromJson(responseData, type);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String displayStatus(String status) {
+        if (OrderVo.STATUS_CREATED.equals(status)) {
+            return "Wait to pay";
+        }
+        if (OrderVo.STATUS_PAID.equals(status)) {
+            return "Wait to receive";
+        }
+        if (OrderVo.STATUS_SETTLED.equals(status)) {
+            return "Successful";
+        }
+        if (OrderVo.STATUS_CANCELLED.equals(status)) {
+            return "Cancelled";
+        }
+        return safe(status);
+    }
+
+    private String formatAmount(String amount) {
+        if (amount == null || amount.trim().isEmpty()) {
+            return "0.00";
+        }
+        return amount;
+    }
+
+    private String formatTime(String value) {
+        if (value == null || value.length() < 10) {
+            return "--";
+        }
+        return value.substring(0, 10);
+    }
+
+    private String safe(String value) {
+        return value != null ? value : "";
     }
 }

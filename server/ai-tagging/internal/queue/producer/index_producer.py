@@ -18,54 +18,84 @@ class IndexProducer:
         if cls._instance is None:
             logger.info("Creating new IndexProducer instance")
             cls._instance = super().__new__(cls)
-            
-            try:
-                cls._connection = pika.BlockingConnection(
-                    pika.ConnectionParameters(
-                        host=RabbitMQConfig.HOST,
-                        port=RabbitMQConfig.PORT,
-                        credentials=pika.PlainCredentials(
-                            RabbitMQConfig.USER,
-                            RabbitMQConfig.PASSWORD
-                        ),
-                        virtual_host=RabbitMQConfig.VHOST
-                    )
-                )
-                cls._channel = cls._connection.channel()
-                
-                # 声明交换机
-                cls._channel.exchange_declare(
-                    exchange=RabbitMQConfig.INDEX_EXCHANGE,
-                    exchange_type='direct',
-                    durable=True
-                )
-                logger.info("IndexProducer initialized successfully")
-            except Exception as e:
-                logger.error(f"Failed to initialize IndexProducer: {e}")
-                raise
+            cls._connect()
         
         return cls._instance
+
+    @classmethod
+    def _connect(cls):
+        try:
+            if cls._connection and not cls._connection.is_closed:
+                cls._connection.close()
+        except Exception:
+            pass
+
+        try:
+            cls._connection = pika.BlockingConnection(
+                pika.ConnectionParameters(
+                    host=RabbitMQConfig.HOST,
+                    port=RabbitMQConfig.PORT,
+                    credentials=pika.PlainCredentials(
+                        RabbitMQConfig.USER,
+                        RabbitMQConfig.PASSWORD
+                    ),
+                    virtual_host=RabbitMQConfig.VHOST
+                )
+            )
+            cls._channel = cls._connection.channel()
+
+            # 声明交换机
+            cls._channel.exchange_declare(
+                exchange=RabbitMQConfig.INDEX_EXCHANGE,
+                exchange_type='direct',
+                durable=True
+            )
+            logger.info("IndexProducer initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize IndexProducer: {e}")
+            raise
+
+    def _ensure_connection(self):
+        if (
+            self._connection is None
+            or self._connection.is_closed
+            or self._channel is None
+            or self._channel.is_closed
+        ):
+            logger.info("IndexProducer connection is closed, reconnecting")
+            self._connect()
     
     @property
     def channel(self):
         return self._channel
     
     def publish_index_task(self, task):
+        routing_key = f"{RabbitMQConfig.INDEX_KEY}.{task['source']}"
+        body = json.dumps(task)
+
         try:
-            routing_key = f"{RabbitMQConfig.INDEX_KEY}.{task['source']}"
-            
+            self._ensure_connection()
             self._channel.basic_publish(
                 exchange=RabbitMQConfig.INDEX_EXCHANGE,
                 routing_key=routing_key,
-                body=json.dumps(task),
+                body=body,
                 properties=pika.BasicProperties(
                     delivery_mode=2,  # 持久化
                 )
             )
             logger.debug(f"Published index task for doc: {task.get('doc', {}).get('id', 'unknown')}")
         except Exception as e:
-            logger.error(f"Failed to publish index task: {e}")
-            raise
+            logger.warning(f"Failed to publish index task, retrying after reconnect: {e}")
+            self._connect()
+            self._channel.basic_publish(
+                exchange=RabbitMQConfig.INDEX_EXCHANGE,
+                routing_key=routing_key,
+                body=body,
+                properties=pika.BasicProperties(
+                    delivery_mode=2,
+                )
+            )
+            logger.debug(f"Published index task for doc after reconnect: {task.get('doc', {}).get('id', 'unknown')}")
     
     def close(self):
         """关闭连接"""

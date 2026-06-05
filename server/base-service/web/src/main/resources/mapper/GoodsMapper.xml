@@ -98,4 +98,29 @@
         WHERE
         u.userID = #{userId}
     </select>
+
+    <select id="selectCollectedGoodsByUserId" resultMap="GoodsVoResultMap">
+        SELECT
+        g.goodID,
+        g.title,
+        g.publishUserID,
+        g.appearance,
+        g.itemDescription,
+        g.price,
+        u.Nickname AS publisherNickname,
+        u.avatarURL AS AvatarURL,
+        p.pictureURL AS pictureURL
+        FROM
+        goods g
+        JOIN
+        goods_collection gc ON g.goodID = gc.goodID
+        JOIN
+        `user` u ON g.publishUserID = u.userID
+        LEFT JOIN
+        picture p ON g.goodID = p.goodID
+        WHERE
+        gc.userID = #{userId}
+        ORDER BY
+        gc.collectionTime DESC
+    </select>
 </mapper>

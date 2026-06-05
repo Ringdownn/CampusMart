@@ -1,5 +1,10 @@
 package model
 
+import (
+	"bytes"
+	"encoding/json"
+)
+
 // 索引储存
 type IndexDoc struct {
 	Id       uint32                 `json:"id,omitempty"`
@@ -7,6 +12,21 @@ type IndexDoc struct {
 	ImageURL string                 `json:"imageURL,omitempty"`
 	Tags     []string               `json:"tags,omitempty"`
 	Document map[string]interface{} `json:"document,omitempty"`
+}
+
+func (doc *IndexDoc) UnmarshalJSON(data []byte) error {
+	type indexDoc IndexDoc
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+
+	var decoded indexDoc
+	if err := decoder.Decode(&decoded); err != nil {
+		return err
+	}
+
+	*doc = IndexDoc(decoded)
+	return nil
 }
 
 // 索引文件存储

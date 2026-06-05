@@ -14,6 +14,7 @@ import com.bumptech.glide.Glide;
 import com.example.campusmart.adapter.MyGoodsAdapter;
 import com.example.campusmart.common.page.PageImpl;
 import com.example.campusmart.result.Result;
+import com.example.campusmart.util.ImageUrlUtils;
 import com.example.campusmart.vo.GoodsVo;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -68,7 +69,7 @@ public class MyGoodsActivity extends Activity implements MyGoodsAdapter.OnButton
         adapter.setImageLoader((imageView, url) -> {
             if (url != null && !url.isEmpty()) {
                 Glide.with(MyGoodsActivity.this)
-                        .load(url)
+                        .load(ImageUrlUtils.normalize(MyGoodsActivity.this, url))
                         .placeholder(R.drawable.placeholder)
                         .error(R.drawable.placeholder)
                         .centerCrop()

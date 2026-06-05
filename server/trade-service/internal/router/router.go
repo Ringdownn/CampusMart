@@ -15,6 +15,7 @@ func Register(r *gin.Engine, orderHandler *handler.OrderHandler) {
 	r.POST("/app/orders", orderHandler.CreateOrder)
 	r.GET("/app/orders/buyer", orderHandler.BuyerOrders)
 	r.GET("/app/orders/seller", orderHandler.SellerOrders)
+	r.GET("/app/orders/by-goods", orderHandler.LatestOrderByGoods)
 	r.GET("/app/orders/:orderId", orderHandler.GetOrder)
 	r.POST("/app/orders/:orderId/cancel", orderHandler.CancelOrder)
 	r.POST("/app/orders/:orderId/confirm-receipt", orderHandler.ConfirmReceipt)

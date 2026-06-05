@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.campusmart.ChatActivity;
 import com.example.campusmart.R;
 import com.example.campusmart.adapter.MessageAdapter;
+import com.example.campusmart.util.ImageUrlUtils;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -109,14 +110,17 @@ public class MessageFragment extends Fragment {
                                 Intent intent = new Intent(getContext(), ChatActivity.class);
                                 intent.putExtra("currentUserId", userId);
                                 intent.putExtra("otherUserId", Long.parseLong(chat.getOtherID()));
+                                intent.putExtra("goodId", chat.getGoodID() != null ? chat.getGoodID() : 0);
                                 intent.putExtra("token", token);
                                 intent.putExtra("otherNickname", chat.getOtherNickname());
+                                intent.putExtra("goodTitle", chat.getGoodTitle() != null ? chat.getGoodTitle() : "");
 
                                 SharedPreferences sp = getContext().getSharedPreferences("user_info", getContext().MODE_PRIVATE);
-                                String selfAvatarUrl = sp.getString("avatar_url", "");
+                                String selfAvatarUrl = ImageUrlUtils.normalize(requireContext(), sp.getString("avatar_url", ""));
                                 intent.putExtra("selfAvatarUrl", selfAvatarUrl);
 
-                                intent.putExtra("otherAvatarUrl", chat.getOtherAvatarURL() != null ? chat.getOtherAvatarURL() : "");
+                                intent.putExtra("otherAvatarUrl", ImageUrlUtils.normalize(requireContext(), chat.getOtherAvatarURL()));
+                                intent.putExtra("goodImageUrl", ImageUrlUtils.normalize(requireContext(), chat.getGoodPictureURL()));
 
                                 startActivity(intent);
                             });

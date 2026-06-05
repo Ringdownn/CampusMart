@@ -17,6 +17,7 @@ import com.google.gson.Gson;
 import com.example.campusmart.vo.LoginVo;
 import com.example.campusmart.result.Result;
 import com.example.campusmart.entity.User;
+import com.example.campusmart.util.ImageUrlUtils;
 
 import java.io.IOException;
 
@@ -176,7 +177,7 @@ public class LoginActivity extends AppCompatActivity {
         editor.putString("profile_signature", user.getProfileSignature());
         editor.putString("school_name", user.getSchoolName());
         editor.putLong("student_id", user.getStudentID() != null ? user.getStudentID() : 0);
-        editor.putString("avatar_url", user.getAvatarURL());
+        editor.putString("avatar_url", ImageUrlUtils.normalize(this, user.getAvatarURL()));
         editor.apply();
     }
 }

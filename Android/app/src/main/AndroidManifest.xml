@@ -46,11 +46,21 @@
             android:name=".MyGoodsActivity"
             android:exported="false" />
         <activity
+            android:name=".AlipayBindActivity"
+            android:exported="false" />
+        <activity
+            android:name=".WalletActivity"
+            android:exported="false" />
+        <activity
+            android:name=".OrderDetailActivity"
+            android:exported="false" />
+        <activity
             android:name=".PersonalInfoActivity"
             android:exported="false" />
         <activity
             android:name=".ChatActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".ServiceActivity"
             android:exported="false" />
