@@ -2,6 +2,7 @@ package org.example.CampusMart.web.controller.goods;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.example.CampusMart.common.login.LoginUserHolder;
 import org.example.CampusMart.common.result.Result;
 import org.example.CampusMart.web.service.GoodsCollectionService;
 import org.example.CampusMart.web.vo.CollectionResultVo;
@@ -18,7 +19,8 @@ public class GoodsCollectionController {
 
     @Operation(summary = "收藏/取消收藏")
     @PostMapping("/toggle")
-    public Result<CollectionResultVo> toggleCollection(@RequestParam Long userID, @RequestParam Long goodID) {
+    public Result<CollectionResultVo> toggleCollection(@RequestParam Long goodID) {
+        Long userID = LoginUserHolder.getLoginUser().getUserId();
         Boolean success = goodsCollectionService.toggleCollection(userID, goodID);
         return Result.ok(CollectionResultVo.builder()
                 .success(success)
@@ -35,7 +37,8 @@ public class GoodsCollectionController {
 
     @Operation(summary = "检查用户是否收藏")
     @GetMapping("/check")
-    public Result<Boolean> checkUserCollected(@RequestParam Long userID, @RequestParam Long goodID) {
+    public Result<Boolean> checkUserCollected(@RequestParam Long goodID) {
+        Long userID = LoginUserHolder.getLoginUser().getUserId();
         return Result.ok(goodsCollectionService.hasUserCollected(userID, goodID));
     }
 }

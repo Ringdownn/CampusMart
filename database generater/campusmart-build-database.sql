@@ -98,6 +98,34 @@ CREATE TABLE `goods` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
+-- Table structure for goods_collection
+-- ----------------------------
+DROP TABLE IF EXISTS `goods_collection`;
+CREATE TABLE `goods_collection` (
+  `collectionID` bigint NOT NULL AUTO_INCREMENT,
+  `userID` bigint NOT NULL,
+  `goodID` bigint NOT NULL,
+  `collectionTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`collectionID`) USING BTREE,
+  UNIQUE KEY `uk_user_good_collection` (`userID`, `goodID`) USING BTREE,
+  KEY `idx_good_id` (`goodID`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
+
+-- ----------------------------
+-- Table structure for goods_like
+-- ----------------------------
+DROP TABLE IF EXISTS `goods_like`;
+CREATE TABLE `goods_like` (
+  `likeID` bigint NOT NULL AUTO_INCREMENT,
+  `userID` bigint NOT NULL,
+  `goodID` bigint NOT NULL,
+  `likeTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`likeID`) USING BTREE,
+  UNIQUE KEY `uk_user_good_like` (`userID`, `goodID`) USING BTREE,
+  KEY `idx_good_id` (`goodID`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
+
+-- ----------------------------
 -- Table structure for orders
 -- ----------------------------
 DROP TABLE IF EXISTS `orders`;
