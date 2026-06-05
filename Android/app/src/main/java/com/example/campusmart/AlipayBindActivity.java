@@ -24,8 +24,8 @@ import okhttp3.Response;
 
 public class AlipayBindActivity extends AppCompatActivity {
     private ImageView ivAvatar;
-    private EditText etAlipayAccount;
-    private EditText etPhone;
+    private EditText etBuyerId;
+    private EditText etBuyerAccount;
     private Button btnBind;
     private OkHttpClient client;
     private Gson gson;
@@ -40,8 +40,8 @@ public class AlipayBindActivity extends AppCompatActivity {
 
         ImageView ivBack = findViewById(R.id.iv_back);
         ivAvatar = findViewById(R.id.iv_avatar);
-        etAlipayAccount = findViewById(R.id.et_alipay_account);
-        etPhone = findViewById(R.id.et_phone);
+        etBuyerId = findViewById(R.id.et_buyer_id);
+        etBuyerAccount = findViewById(R.id.et_buyer_account);
         btnBind = findViewById(R.id.btn_bind);
 
         initNetwork();
@@ -75,11 +75,16 @@ public class AlipayBindActivity extends AppCompatActivity {
     }
 
     private void bindAlipay() {
-        String alipayAccount = etAlipayAccount.getText().toString().trim();
-        String phone = etPhone.getText().toString().trim();
+        String buyerId = etBuyerId.getText().toString().trim();
+        String buyerAccount = etBuyerAccount.getText().toString().trim();
 
-        if (alipayAccount.isEmpty()) {
-            Toast.makeText(this, "Please enter Alipay account", Toast.LENGTH_SHORT).show();
+        if (buyerId.isEmpty()) {
+            Toast.makeText(this, "Please enter sandbox buyer ID", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (buyerAccount.isEmpty()) {
+            Toast.makeText(this, "Please enter sandbox buyer account", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -90,8 +95,8 @@ public class AlipayBindActivity extends AppCompatActivity {
         }
 
         BindRequest requestBody = new BindRequest();
-        requestBody.alipayUserId = alipayAccount;
-        requestBody.alipayLoginId = alipayAccount;
+        requestBody.alipayUserId = buyerId;
+        requestBody.alipayLoginId = buyerAccount;
         requestBody.nickname = "";
 
         RequestBody body = RequestBody.create(

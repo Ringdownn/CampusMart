@@ -9,6 +9,7 @@ public class Goods {
     private String appearance;
     private String itemDescription;
     private Long price;
+    private String pictureURL;
     private Date publishTime;
 
     public Long getGoodID() {
@@ -57,6 +58,14 @@ public class Goods {
 
     public void setPrice(Long price) {
         this.price = price;
+    }
+
+    public String getPictureURL() {
+        return pictureURL;
+    }
+
+    public void setPictureURL(String pictureURL) {
+        this.pictureURL = pictureURL;
     }
 
     public Date getPublishTime() {

@@ -44,32 +44,31 @@
         android:background="@drawable/shape_circle"
         android:scaleType="centerCrop"/>
 
-    <!-- 支付宝账号输入框 -->
+    <!-- 沙箱买家 ID 输入框 -->
     <EditText
-        android:id="@+id/et_alipay_account"
+        android:id="@+id/et_buyer_id"
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:layout_marginHorizontal="32dp"
         android:layout_marginTop="48dp"
-        android:hint="Alipay account"
+        android:hint="Sandbox buyer ID"
         android:textSize="14sp"
         android:fontFamily="@font/ubuntu_m"
         android:background="@drawable/rounded_edittext_bg"
         android:paddingHorizontal="16dp"/>
 
-    <!-- 手机号输入框 -->
+    <!-- 沙箱买家账号输入框 -->
     <EditText
-        android:id="@+id/et_phone"
+        android:id="@+id/et_buyer_account"
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:layout_marginHorizontal="32dp"
         android:layout_marginTop="24dp"
-        android:hint="Phone number"
+        android:hint="Sandbox buyer account"
         android:textSize="14sp"
         android:fontFamily="@font/ubuntu_m"
         android:background="@drawable/rounded_edittext_bg"
-        android:paddingHorizontal="16dp"
-        android:inputType="phone"/>
+        android:paddingHorizontal="16dp"/>
 
     <View
         android:layout_width="match_parent"

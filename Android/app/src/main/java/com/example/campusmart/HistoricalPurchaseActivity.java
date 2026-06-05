@@ -223,6 +223,9 @@ public class HistoricalPurchaseActivity extends AppCompatActivity implements His
                         if (goods.getItemDescription() != null && !goods.getItemDescription().isEmpty()) {
                             purchase.desc = goods.getItemDescription();
                         }
+                        if (goods.getPictureURL() != null && !goods.getPictureURL().isEmpty()) {
+                            purchase.pictureURL = goods.getPictureURL();
+                        }
                         adapter.notifyDataSetChanged();
                     });
                 }
