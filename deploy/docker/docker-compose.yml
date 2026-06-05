@@ -250,10 +250,11 @@ services:
       PAYMENT_DB_DSN: root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE}?charset=utf8mb4&parseTime=True&loc=Local
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/
       JWT_SECRET: ${JWT_SECRET}
-      ALIPAY_APP_ID: ${ALIPAY_APP_ID:-campusmart-sandbox-app}
+      ALIPAY_APP_ID: ${ALIPAY_APP_ID}
       ALIPAY_NOTIFY_URL: ${ALIPAY_NOTIFY_URL:-http://localhost:8080/app/payments/alipay/notify}
-      ALIPAY_MOCK_SIGN_SECRET: ${ALIPAY_MOCK_SIGN_SECRET:-campusmart-payment-mock-secret}
-      ALIPAY_VERIFY_SIGNATURE: ${ALIPAY_VERIFY_SIGNATURE:-false}
+      ALIPAY_APP_PRIVATE_KEY: ${ALIPAY_APP_PRIVATE_KEY}
+      ALIPAY_PUBLIC_KEY: ${ALIPAY_PUBLIC_KEY}
+      ALIPAY_IS_PRODUCTION: ${ALIPAY_IS_PRODUCTION:-false}
     networks:
       - campusmart
 

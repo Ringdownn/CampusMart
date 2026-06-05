@@ -46,6 +46,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
     // Gson
     implementation("com.google.code.gson:gson:2.8.9")
+    implementation("com.alipay.sdk:alipaysdk-android:+@aar")
     implementation("com.squareup.picasso:picasso:2.71828")
     implementation("com.github.bumptech.glide:glide:4.16.0")
 }

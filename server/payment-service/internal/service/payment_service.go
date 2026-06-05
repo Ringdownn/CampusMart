@@ -2,19 +2,16 @@ package service
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"campusmart/payment-service/internal/model"
+	alipayclient "campusmart/payment-service/internal/pkg/alipay"
 	"campusmart/payment-service/internal/repository"
 )
 
@@ -24,15 +21,17 @@ var (
 	ErrPaymentNotPayable   = errors.New("支付单不可支付")
 	ErrPaymentForbidden    = errors.New("无权操作该支付单")
 	ErrAlipayNotBound      = errors.New("请先绑定支付宝沙箱账户")
+	ErrAlipayConfig        = errors.New("支付宝沙箱配置不完整")
 )
 
 var amountPattern = regexp.MustCompile(`^[0-9]+(\.[0-9]{1,2})?$`)
 
 type PaymentConfig struct {
-	AlipayAppID           string
-	AlipayNotifyURL       string
-	AlipayMockSignSecret  string
-	AlipayVerifySignature bool
+	AlipayAppID         string
+	AlipayNotifyURL     string
+	AlipayAppPrivateKey string
+	AlipayPublicKey     string
+	AlipayIsProduction  bool
 }
 
 type CreatePaymentRequest struct {
@@ -58,14 +57,14 @@ type AlipayPayResponse struct {
 }
 
 type AlipayNotifyRequest struct {
-	OutTradeNo    string `json:"out_trade_no"`
-	TradeNo       string `json:"trade_no"`
-	TotalAmount   string `json:"total_amount"`
-	TradeStatus   string `json:"trade_status"`
-	AppID         string `json:"app_id"`
-	Sign          string `json:"sign"`
-	RawBody       string `json:"-"`
-	RawSignSource string `json:"-"`
+	OutTradeNo  string            `json:"out_trade_no"`
+	TradeNo     string            `json:"trade_no"`
+	TotalAmount string            `json:"total_amount"`
+	TradeStatus string            `json:"trade_status"`
+	AppID       string            `json:"app_id"`
+	Sign        string            `json:"sign"`
+	Params      map[string]string `json:"-"`
+	RawBody     string            `json:"-"`
 }
 
 type ClosePaymentResponse struct {
@@ -88,13 +87,24 @@ type PaymentService struct {
 	paymentRepo *repository.PaymentRepository
 	bindRepo    *repository.AlipayBindRepository
 	cfg         PaymentConfig
+	alipay      *alipayclient.Client
+	alipayErr   error
 }
 
 func NewPaymentService(paymentRepo *repository.PaymentRepository, bindRepo *repository.AlipayBindRepository, cfg PaymentConfig) *PaymentService {
+	alipay, err := alipayclient.NewClient(alipayclient.Config{
+		AppID:         cfg.AlipayAppID,
+		AppPrivateKey: cfg.AlipayAppPrivateKey,
+		AlipayKey:     cfg.AlipayPublicKey,
+		NotifyURL:     cfg.AlipayNotifyURL,
+		IsProduction:  cfg.AlipayIsProduction,
+	})
 	return &PaymentService{
 		paymentRepo: paymentRepo,
 		bindRepo:    bindRepo,
 		cfg:         cfg,
+		alipay:      alipay,
+		alipayErr:   err,
 	}
 }
 
@@ -150,29 +160,24 @@ func (s *PaymentService) BuildAlipayOrderString(ctx context.Context, orderID, cu
 		return nil, ErrAlipayNotBound
 	}
 
-	values := url.Values{}
-	values.Set("app_id", s.cfg.AlipayAppID)
-	values.Set("method", "alipay.trade.app.pay")
-	values.Set("charset", "utf-8")
-	values.Set("sign_type", "RSA2")
-	values.Set("timestamp", time.Now().Format("2006-01-02 15:04:05"))
-	values.Set("version", "1.0")
-	values.Set("notify_url", s.cfg.AlipayNotifyURL)
-	values.Set("out_trade_no", payment.PayNo)
-	values.Set("subject", "CampusMart订单-"+payment.OrderNo)
-	values.Set("total_amount", payment.Amount)
-	values.Set("product_code", "QUICK_MSECURITY_PAY")
-	values.Set("sandbox_buyer", bind.AlipayLoginID)
-	values.Set("mock", "true")
-
-	sign := signMock(values.Encode(), s.cfg.AlipayMockSignSecret)
-	values.Set("sign", sign)
+	if s.alipayErr != nil || s.alipay == nil {
+		return nil, ErrAlipayConfig
+	}
+	orderString, err := s.alipay.BuildAppPayOrder(alipayclient.AppPayOrder{
+		OutTradeNo:  payment.PayNo,
+		Subject:     "CampusMart订单-" + payment.OrderNo,
+		TotalAmount: payment.Amount,
+		Body:        "CampusMart校园交易订单",
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &AlipayPayResponse{
 		OrderID:     payment.OrderID,
 		OrderNo:     payment.OrderNo,
 		PayNo:       payment.PayNo,
-		OrderString: values.Encode(),
+		OrderString: orderString,
 	}, nil
 }
 
@@ -183,13 +188,16 @@ func (s *PaymentService) HandleAlipayNotify(ctx context.Context, req AlipayNotif
 	if req.OutTradeNo == "" || req.TradeNo == "" || !validAmount(req.TotalAmount) {
 		return false, ErrInvalidPaymentParam
 	}
-	if req.TradeStatus == "" {
-		req.TradeStatus = "TRADE_SUCCESS"
-	}
 	if req.TradeStatus != "TRADE_SUCCESS" && req.TradeStatus != "TRADE_FINISHED" {
 		return false, nil
 	}
-	if s.cfg.AlipayVerifySignature && !verifyMockSignature(req.RawSignSource, req.Sign, s.cfg.AlipayMockSignSecret) {
+	if req.AppID != s.cfg.AlipayAppID {
+		return false, ErrInvalidPaymentParam
+	}
+	if s.alipayErr != nil || s.alipay == nil {
+		return false, ErrAlipayConfig
+	}
+	if !s.alipay.VerifyNotify(req.Params) {
 		return false, ErrInvalidPaymentParam
 	}
 
@@ -295,17 +303,4 @@ func normalizeAmount(amount string) string {
 
 func validAmount(amount string) bool {
 	return amountPattern.MatchString(amount) && amount != "0.00"
-}
-
-func signMock(source, secret string) string {
-	mac := hmac.New(sha256.New, []byte(secret))
-	_, _ = mac.Write([]byte(source))
-	return base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
-}
-
-func verifyMockSignature(source, sign, secret string) bool {
-	if source == "" || sign == "" {
-		return false
-	}
-	return hmac.Equal([]byte(signMock(source, secret)), []byte(sign))
 }

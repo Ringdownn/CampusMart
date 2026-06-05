@@ -9,7 +9,7 @@
         android:id="@+id/layout_back"
         android:layout_width="wrap_content"
         android:layout_height="56dp"
-        android:layout_marginTop="18dp"
+        android:layout_marginTop="28dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="12dp"
@@ -23,7 +23,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="14dp"
             android:fontFamily="@font/ubuntu_b"
             android:text="back"
             android:textColor="#111111"
@@ -53,7 +53,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="354dp"
+        android:layout_height="318dp"
         android:layout_marginStart="30dp"
         android:layout_marginTop="64dp"
         android:layout_marginEnd="30dp"
@@ -62,10 +62,10 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="98dp"
+            android:layout_height="88dp"
             android:gravity="center_vertical"
             android:orientation="vertical"
-            android:paddingStart="36dp"
+            android:paddingStart="22dp"
             android:paddingEnd="36dp">
 
             <TextView
@@ -84,9 +84,10 @@
                 android:orientation="horizontal">
 
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="32dp"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/ubuntu_b"
+                    android:gravity="center"
                     android:text="$"
                     android:textColor="#111111"
                     android:textSize="24sp"
@@ -96,7 +97,7 @@
                     android:id="@+id/tv_available_balance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="26dp"
+                    android:layout_marginStart="13dp"
                     android:fontFamily="@font/ubuntu_m"
                     android:text="--"
                     android:textColor="#111111"
@@ -111,10 +112,10 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="128dp"
+            android:layout_height="114dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingStart="30dp"
+            android:paddingStart="22dp"
             android:paddingEnd="24dp">
 
             <ImageView
@@ -125,12 +126,15 @@
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="18dp"
+                android:layout_marginStart="13dp"
                 android:layout_weight="1"
+                android:ellipsize="end"
                 android:fontFamily="@font/ubuntu_m"
+                android:maxLines="1"
+                android:singleLine="true"
                 android:text="Withdraw Cash"
-                android:textColor="#111111"
-                android:textSize="18sp" />
+                android:textColor="#555555"
+                android:textSize="15sp" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_cashout"
@@ -151,10 +155,10 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="126dp"
+            android:layout_height="114dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingStart="30dp"
+            android:paddingStart="22dp"
             android:paddingEnd="24dp">
 
             <ImageView
@@ -165,12 +169,15 @@
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="18dp"
+                android:layout_marginStart="13dp"
                 android:layout_weight="1"
+                android:ellipsize="end"
                 android:fontFamily="@font/ubuntu_m"
+                android:maxLines="1"
+                android:singleLine="true"
                 android:text="Payment Check"
-                android:textColor="#111111"
-                android:textSize="18sp" />
+                android:textColor="#555555"
+                android:textSize="15sp" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_check"

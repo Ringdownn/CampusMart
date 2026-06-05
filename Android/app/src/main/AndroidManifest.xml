@@ -12,6 +12,8 @@
         tools:ignore="QueryAllPackagesPermission" />
 
     <queries>
+        <package android:name="com.eg.android.AlipayGphone" />
+        <package android:name="com.eg.android.AlipayGphoneRC" />
         <package android:name="com.tencent.mm" />
         <package android:name="com.tencent.mm.mirror" />
         <package android:name="com.tencent.wechat" />
@@ -50,6 +52,12 @@
             android:exported="false" />
         <activity
             android:name=".WalletActivity"
+            android:exported="false" />
+        <activity
+            android:name=".WalletFlowsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".WithdrawConfirmActivity"
             android:exported="false" />
         <activity
             android:name=".OrderDetailActivity"

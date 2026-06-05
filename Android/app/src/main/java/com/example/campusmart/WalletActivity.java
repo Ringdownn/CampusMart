@@ -1,5 +1,6 @@
 package com.example.campusmart;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
@@ -33,6 +34,7 @@ public class WalletActivity extends AppCompatActivity {
     private String baseUrl;
     private String token;
     private long userId;
+    private double availableAmount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,8 +50,12 @@ public class WalletActivity extends AppCompatActivity {
         loadUserAvatar();
 
         findViewById(R.id.layout_back).setOnClickListener(v -> finish());
-        btnCashout.setOnClickListener(v -> Toast.makeText(this, "Cashout is not available yet", Toast.LENGTH_SHORT).show());
-        btnCheck.setOnClickListener(v -> Toast.makeText(this, "Payment check is not available yet", Toast.LENGTH_SHORT).show());
+        btnCashout.setOnClickListener(v -> {
+            Intent intent = new Intent(this, WithdrawConfirmActivity.class);
+            intent.putExtra("availableAmount", availableAmount);
+            startActivity(intent);
+        });
+        btnCheck.setOnClickListener(v -> startActivity(new Intent(this, WalletFlowsActivity.class)));
     }
 
     @Override
@@ -116,6 +122,7 @@ public class WalletActivity extends AppCompatActivity {
 
                 runOnUiThread(() -> {
                     if (response.isSuccessful() && result != null && result.getCode() == 200 && result.getData() != null) {
+                        availableAmount = parseAmount(result.getData().availableAmount);
                         tvAvailableBalance.setText(formatAmount(result.getData().availableAmount));
                     } else {
                         Toast.makeText(WalletActivity.this, "Load wallet failed", Toast.LENGTH_SHORT).show();
@@ -141,6 +148,17 @@ public class WalletActivity extends AppCompatActivity {
             return new DecimalFormat("0.##").format(Double.parseDouble(amount));
         } catch (NumberFormatException e) {
             return amount;
+        }
+    }
+
+    private double parseAmount(String amount) {
+        if (amount == null || amount.trim().isEmpty()) {
+            return 0D;
+        }
+        try {
+            return Double.parseDouble(amount);
+        } catch (NumberFormatException e) {
+            return 0D;
         }
     }
 

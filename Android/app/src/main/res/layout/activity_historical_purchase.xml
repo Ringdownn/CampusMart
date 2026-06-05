@@ -33,6 +33,39 @@
             android:gravity="center"/>
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingHorizontal="28dp">
+
+        <TextView
+            android:id="@+id/tv_tag_buyer"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_tag_selected"
+            android:fontFamily="@font/ubuntu_b"
+            android:gravity="center"
+            android:text="Buyer"
+            android:textColor="@android:color/white"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/tv_tag_seller"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="16dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_tag_unselected"
+            android:fontFamily="@font/ubuntu_b"
+            android:gravity="center"
+            android:text="Seller"
+            android:textColor="#555555"
+            android:textSize="15sp" />
+    </LinearLayout>
+
     <!-- 商品列表RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_collection_history"

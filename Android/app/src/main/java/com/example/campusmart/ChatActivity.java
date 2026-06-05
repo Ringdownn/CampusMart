@@ -20,6 +20,7 @@ import com.bumptech.glide.Glide;
 import com.example.campusmart.adapter.ChatAdapter;
 import com.example.campusmart.entity.Message;
 import com.example.campusmart.result.Result;
+import com.example.campusmart.util.AlipayPaymentHelper;
 import com.example.campusmart.util.ImageUrlUtils;
 import com.example.campusmart.vo.MessageVo;
 import com.google.gson.Gson;
@@ -444,10 +445,10 @@ public class ChatActivity extends AppCompatActivity {
                 Result<PaymentInfo> result = parseResult(responseData, new TypeToken<Result<PaymentInfo>>(){}.getType());
 
                 runOnUiThread(() -> {
-                    updateGoodsActionUI(orderStatus);
                     if (response.isSuccessful() && result != null && result.getCode() == 200 && result.getData() != null) {
-                        showSandboxPayDialog(result.getData());
+                        startAlipayPayment(result.getData());
                     } else {
+                        updateGoodsActionUI(orderStatus);
                         showError("Payment Failed", result != null ? result.getMessage() : "服务器响应异常");
                     }
                 });
@@ -472,59 +473,26 @@ public class ChatActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void showSandboxPayDialog(PaymentInfo paymentInfo) {
-        String amount = getOrderStringParam(paymentInfo.orderString, "total_amount");
-        if (paymentInfo.payNo == null || paymentInfo.payNo.isEmpty() || amount == null || amount.isEmpty()) {
+    private void startAlipayPayment(PaymentInfo paymentInfo) {
+        if (paymentInfo == null || paymentInfo.orderString == null || paymentInfo.orderString.trim().isEmpty()) {
+            updateGoodsActionUI(orderStatus);
             showError("Payment Failed", "支付参数不完整");
             return;
         }
 
-        new AlertDialog.Builder(this)
-                .setTitle("Sandbox Payment")
-                .setMessage("Pay No: " + paymentInfo.payNo + "\nAmount: ¥ " + amount + "\n\nClick Mock Paid to simulate Alipay success.")
-                .setPositiveButton("Mock Paid", (dialog, which) -> mockAlipayPaid(paymentInfo.payNo, amount))
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private void mockAlipayPaid(String payNo, String amount) {
-        String url = baseUrl + "/app/payments/alipay/notify";
-        AlipayNotifyRequest body = new AlipayNotifyRequest(
-                payNo,
-                "MOCK_TRADE_" + System.currentTimeMillis(),
-                amount,
-                "TRADE_SUCCESS"
-        );
-        Request request = new Request.Builder()
-                .url(url)
-                .post(RequestBody.create(gson.toJson(body), JSON))
-                .build();
-
-        setActionLoading("Syncing...");
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                runOnUiThread(() -> {
-                    updateGoodsActionUI(orderStatus);
-                    Toast.makeText(ChatActivity.this, "支付回调失败，请检查网络", Toast.LENGTH_SHORT).show();
-                });
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                String responseData = response.body() != null ? response.body().string() : "";
-                boolean success = response.isSuccessful() && "success".equalsIgnoreCase(responseData.trim());
-                runOnUiThread(() -> {
-                    if (success) {
-                        orderStatus = "PAID";
-                        updateGoodsActionUI(orderStatus);
-                        Toast.makeText(ChatActivity.this, "支付成功，订单状态同步中", Toast.LENGTH_SHORT).show();
-                        btnGoodsAction.postDelayed(() -> ChatActivity.this.loadOrderStatus(), 2000);
-                    } else {
-                        updateGoodsActionUI(orderStatus);
-                        showError("Payment Failed", "支付回调未成功");
-                    }
-                });
+        setActionLoading("Opening Alipay...");
+        AlipayPaymentHelper.pay(this, paymentInfo.orderString, payResult -> {
+            if (payResult.isSuccess() || payResult.isProcessing()) {
+                Toast.makeText(ChatActivity.this, payResult.message(), Toast.LENGTH_SHORT).show();
+                btnGoodsAction.postDelayed(() -> ChatActivity.this.loadOrderStatus(), 1500);
+                btnGoodsAction.postDelayed(() -> ChatActivity.this.loadOrderStatus(), 3500);
+            } else {
+                if (payResult.isCancelled()) {
+                    Toast.makeText(ChatActivity.this, payResult.message(), Toast.LENGTH_SHORT).show();
+                } else {
+                    showError("Payment Failed", payResult.message());
+                }
+                updateGoodsActionUI(orderStatus);
             }
         });
     }
@@ -590,13 +558,6 @@ public class ChatActivity extends AppCompatActivity {
                 .setMessage(message != null && !message.isEmpty() ? message : "Unknown error")
                 .setPositiveButton("OK", null)
                 .show();
-    }
-
-    private String getOrderStringParam(String orderString, String name) {
-        if (orderString == null || orderString.isEmpty()) {
-            return "";
-        }
-        return Uri.parse("https://campusmart.pay/?" + orderString).getQueryParameter(name);
     }
 
     private <T> Result<T> parseResult(String responseData, Type type) {
@@ -800,19 +761,5 @@ public class ChatActivity extends AppCompatActivity {
     private static class PaymentInfo {
         private String payNo;
         private String orderString;
-    }
-
-    private static class AlipayNotifyRequest {
-        private final String out_trade_no;
-        private final String trade_no;
-        private final String total_amount;
-        private final String trade_status;
-
-        private AlipayNotifyRequest(String outTradeNo, String tradeNo, String totalAmount, String tradeStatus) {
-            this.out_trade_no = outTradeNo;
-            this.trade_no = tradeNo;
-            this.total_amount = totalAmount;
-            this.trade_status = tradeStatus;
-        }
     }
 }

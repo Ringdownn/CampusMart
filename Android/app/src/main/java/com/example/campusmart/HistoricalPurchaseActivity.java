@@ -2,8 +2,10 @@ package com.example.campusmart;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -31,15 +33,21 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class HistoricalPurchaseActivity extends AppCompatActivity implements HistoricalPurchaseAdapter.OnDetailClickListener {
+    private static final String TAB_BUYER = "buyer";
+    private static final String TAB_SELLER = "seller";
+
     private RecyclerView rvHistoricalPurchase;
     private HistoricalPurchaseAdapter adapter;
     private List<HistoricalPurchaseAdapter.Purchase> purchaseList;
+    private TextView tvTagBuyer;
+    private TextView tvTagSeller;
     private OkHttpClient client;
     private Gson gson;
     private String baseUrl;
     private String token;
     private long userId;
     private boolean firstResume = true;
+    private String currentTab = TAB_BUYER;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,10 +56,13 @@ public class HistoricalPurchaseActivity extends AppCompatActivity implements His
 
         // 初始化控件
         ImageView ivBack = findViewById(R.id.iv_back);
+        tvTagBuyer = findViewById(R.id.tv_tag_buyer);
+        tvTagSeller = findViewById(R.id.tv_tag_seller);
         rvHistoricalPurchase = findViewById(R.id.rv_collection_history);
 
         initNetwork();
         initRecyclerView();
+        initTabs();
         loadOrders();
 
         // 返回按钮点击事件
@@ -97,6 +108,29 @@ public class HistoricalPurchaseActivity extends AppCompatActivity implements His
         rvHistoricalPurchase.setAdapter(adapter);
     }
 
+    private void initTabs() {
+        updateTabUi();
+        tvTagBuyer.setOnClickListener(v -> switchTab(TAB_BUYER));
+        tvTagSeller.setOnClickListener(v -> switchTab(TAB_SELLER));
+    }
+
+    private void switchTab(String tab) {
+        if (currentTab.equals(tab)) {
+            return;
+        }
+        currentTab = tab;
+        updateTabUi();
+        loadOrders();
+    }
+
+    private void updateTabUi() {
+        boolean buyerSelected = TAB_BUYER.equals(currentTab);
+        tvTagBuyer.setBackgroundResource(buyerSelected ? R.drawable.bg_tag_selected : R.drawable.bg_tag_unselected);
+        tvTagBuyer.setTextColor(buyerSelected ? Color.WHITE : Color.rgb(85, 85, 85));
+        tvTagSeller.setBackgroundResource(buyerSelected ? R.drawable.bg_tag_unselected : R.drawable.bg_tag_selected);
+        tvTagSeller.setTextColor(buyerSelected ? Color.rgb(85, 85, 85) : Color.WHITE);
+    }
+
     private void loadOrders() {
         if (userId == 0 || token.isEmpty()) {
             Toast.makeText(this, "Please login first", Toast.LENGTH_SHORT).show();
@@ -105,7 +139,7 @@ public class HistoricalPurchaseActivity extends AppCompatActivity implements His
         }
 
         Request request = new Request.Builder()
-                .url(baseUrl + "/app/orders/buyer")
+                .url(baseUrl + "/app/orders/" + currentTab)
                 .addHeader("access-token", token)
                 .get()
                 .build();
@@ -153,7 +187,7 @@ public class HistoricalPurchaseActivity extends AppCompatActivity implements His
         adapter.notifyDataSetChanged();
 
         if (orders.isEmpty()) {
-            Toast.makeText(this, "No purchase history", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, TAB_BUYER.equals(currentTab) ? "No purchase history" : "No sales history", Toast.LENGTH_SHORT).show();
         }
     }
 

@@ -1,12 +1,9 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
-	"sort"
 	"strconv"
-	"strings"
 
 	"campusmart/payment-service/internal/result"
 	"campusmart/payment-service/internal/service"
@@ -103,51 +100,25 @@ func (h *PaymentHandler) ClosePayment(c *gin.Context) {
 }
 
 func parseAlipayNotify(c *gin.Context) (service.AlipayNotifyRequest, error) {
-	contentType := c.GetHeader("Content-Type")
-	if strings.Contains(contentType, "application/json") {
-		body, err := c.GetRawData()
-		if err != nil {
-			return service.AlipayNotifyRequest{}, err
-		}
-		var req service.AlipayNotifyRequest
-		if err := json.Unmarshal(body, &req); err != nil {
-			return service.AlipayNotifyRequest{}, err
-		}
-		req.RawBody = string(body)
-		req.RawSignSource = string(body)
-		return req, nil
-	}
-
 	if err := c.Request.ParseForm(); err != nil {
 		return service.AlipayNotifyRequest{}, err
 	}
 	form := c.Request.PostForm
+	params := make(map[string]string, len(form))
+	for key, values := range form {
+		if len(values) > 0 {
+			params[key] = values[0]
+		}
+	}
 	req := service.AlipayNotifyRequest{
-		OutTradeNo:    form.Get("out_trade_no"),
-		TradeNo:       form.Get("trade_no"),
-		TotalAmount:   form.Get("total_amount"),
-		TradeStatus:   form.Get("trade_status"),
-		AppID:         form.Get("app_id"),
-		Sign:          form.Get("sign"),
-		RawBody:       form.Encode(),
-		RawSignSource: signSource(form),
+		OutTradeNo:  form.Get("out_trade_no"),
+		TradeNo:     form.Get("trade_no"),
+		TotalAmount: form.Get("total_amount"),
+		TradeStatus: form.Get("trade_status"),
+		AppID:       form.Get("app_id"),
+		Sign:        form.Get("sign"),
+		Params:      params,
+		RawBody:     form.Encode(),
 	}
 	return req, nil
-}
-
-func signSource(values map[string][]string) string {
-	keys := make([]string, 0, len(values))
-	for key := range values {
-		if key != "sign" {
-			keys = append(keys, key)
-		}
-	}
-	sort.Strings(keys)
-	parts := make([]string, 0, len(keys))
-	for _, key := range keys {
-		for _, value := range values[key] {
-			parts = append(parts, key+"="+value)
-		}
-	}
-	return strings.Join(parts, "&")
 }

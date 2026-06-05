@@ -42,10 +42,11 @@ func main() {
 	paymentRepo := repository.NewPaymentRepository(db)
 	bindSvc := service.NewAlipayBindService(bindRepo)
 	paymentSvc := service.NewPaymentService(paymentRepo, bindRepo, service.PaymentConfig{
-		AlipayAppID:           cfg.AlipayAppID,
-		AlipayNotifyURL:       cfg.AlipayNotifyURL,
-		AlipayMockSignSecret:  cfg.AlipayMockSignSecret,
-		AlipayVerifySignature: cfg.AlipayVerifySignature,
+		AlipayAppID:         cfg.AlipayAppID,
+		AlipayNotifyURL:     cfg.AlipayNotifyURL,
+		AlipayAppPrivateKey: cfg.AlipayAppPrivateKey,
+		AlipayPublicKey:     cfg.AlipayPublicKey,
+		AlipayIsProduction:  cfg.AlipayIsProduction,
 	})
 	bindHandler := handler.NewAlipayBindHandler(bindSvc, cfg.JWTSecret)
 	paymentHandler := handler.NewPaymentHandler(paymentSvc, cfg.JWTSecret)

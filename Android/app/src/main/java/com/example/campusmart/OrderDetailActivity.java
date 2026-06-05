@@ -4,7 +4,6 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -19,6 +18,7 @@ import androidx.appcompat.widget.AppCompatButton;
 import com.bumptech.glide.Glide;
 import com.example.campusmart.entity.Goods;
 import com.example.campusmart.result.Result;
+import com.example.campusmart.util.AlipayPaymentHelper;
 import com.example.campusmart.util.ImageUrlUtils;
 import com.example.campusmart.vo.OrderVo;
 import com.google.gson.Gson;
@@ -477,10 +477,10 @@ public class OrderDetailActivity extends AppCompatActivity {
                 }.getType());
 
                 runOnUiThread(() -> {
-                    renderOrder();
                     if (response.isSuccessful() && result != null && result.getCode() == 200 && result.getData() != null) {
-                        showSandboxPayDialog(result.getData());
+                        startAlipayPayment(result.getData());
                     } else {
+                        renderOrder();
                         showError("Payment Failed", result != null ? result.getMessage() : "Server error: " + response.code());
                     }
                 });
@@ -488,56 +488,27 @@ public class OrderDetailActivity extends AppCompatActivity {
         });
     }
 
-    private void showSandboxPayDialog(PaymentInfo paymentInfo) {
-        String amount = getOrderStringParam(paymentInfo.orderString, "total_amount");
-        if (isEmpty(paymentInfo.payNo) || isEmpty(amount)) {
-            showError("Payment Failed", "Payment parameters are incomplete.");
+    private void startAlipayPayment(PaymentInfo paymentInfo) {
+        if (paymentInfo == null || isEmpty(paymentInfo.orderString)) {
+            renderOrder();
+            showError("Payment Failed", "Alipay order string is empty.");
             return;
         }
 
-        new AlertDialog.Builder(this)
-                .setTitle("Sandbox Payment")
-                .setMessage("Pay No: " + paymentInfo.payNo + "\nAmount: ¥ " + amount + "\n\nClick Mock Paid to simulate Alipay success.")
-                .setPositiveButton("Mock Paid", (dialog, which) -> mockAlipayPaid(paymentInfo.payNo, amount))
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private void mockAlipayPaid(String payNo, String amount) {
-        AlipayNotifyRequest body = new AlipayNotifyRequest(
-                payNo,
-                "MOCK_TRADE_" + System.currentTimeMillis(),
-                amount,
-                "TRADE_SUCCESS"
-        );
-        Request request = new Request.Builder()
-                .url(baseUrl + "/app/payments/alipay/notify")
-                .post(RequestBody.create(gson.toJson(body), JSON))
-                .build();
-
-        setActionLoading("Syncing...");
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                runOnUiThread(() -> {
+        setActionLoading("Opening Alipay...");
+        AlipayPaymentHelper.pay(this, paymentInfo.orderString, payResult -> {
+            if (payResult.isSuccess() || payResult.isProcessing()) {
+                Toast.makeText(OrderDetailActivity.this, payResult.message(), Toast.LENGTH_SHORT).show();
+                refreshPaidStatusWithRetry();
+            } else {
+                if (payResult.isCancelled()) {
+                    Toast.makeText(OrderDetailActivity.this, payResult.message(), Toast.LENGTH_SHORT).show();
+                } else {
+                    showError("Payment Failed", payResult.message());
+                }
+                if (!isFinishing()) {
                     renderOrder();
-                    Toast.makeText(OrderDetailActivity.this, "Payment callback failed", Toast.LENGTH_SHORT).show();
-                });
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                String responseData = response.body() != null ? response.body().string() : "";
-                boolean success = response.isSuccessful() && "success".equalsIgnoreCase(responseData.trim());
-                runOnUiThread(() -> {
-                    if (success) {
-                        Toast.makeText(OrderDetailActivity.this, "Payment successful, syncing order status", Toast.LENGTH_SHORT).show();
-                        refreshPaidStatusWithRetry();
-                    } else {
-                        renderOrder();
-                        showError("Payment Failed", "Payment callback was not accepted.");
-                    }
-                });
+                }
             }
         });
     }
@@ -717,13 +688,6 @@ public class OrderDetailActivity extends AppCompatActivity {
         }
     }
 
-    private String getOrderStringParam(String orderString, String name) {
-        if (orderString == null || orderString.isEmpty()) {
-            return "";
-        }
-        return Uri.parse("https://campusmart.pay/?" + orderString).getQueryParameter(name);
-    }
-
     private String formatAmount(String amount) {
         if (isEmpty(amount)) {
             return "0.00";
@@ -834,19 +798,5 @@ public class OrderDetailActivity extends AppCompatActivity {
     private static class PaymentInfo {
         private String payNo;
         private String orderString;
-    }
-
-    private static class AlipayNotifyRequest {
-        private final String out_trade_no;
-        private final String trade_no;
-        private final String total_amount;
-        private final String trade_status;
-
-        private AlipayNotifyRequest(String outTradeNo, String tradeNo, String totalAmount, String tradeStatus) {
-            this.out_trade_no = outTradeNo;
-            this.trade_no = tradeNo;
-            this.total_amount = totalAmount;
-            this.trade_status = tradeStatus;
-        }
     }
 }
