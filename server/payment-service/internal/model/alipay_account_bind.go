@@ -8,8 +8,6 @@ type AlipayAccountBind struct {
 	AlipayUserID  string    `gorm:"column:alipay_user_id;size:128;not null" json:"alipayUserId"`
 	AlipayLoginID string    `gorm:"column:alipay_login_id;size:128" json:"alipayLoginId"`
 	Nickname      string    `gorm:"column:nickname;size:64" json:"nickname"`
-	AccessToken   string    `gorm:"column:access_token;size:512" json:"-"`
-	RefreshToken  string    `gorm:"column:refresh_token;size:512" json:"-"`
 	BindTime      time.Time `gorm:"column:bind_time;not null" json:"bindTime"`
 	CreateTime    time.Time `gorm:"column:create_time;autoCreateTime" json:"createTime"`
 	UpdateTime    time.Time `gorm:"column:update_time;autoUpdateTime" json:"updateTime"`

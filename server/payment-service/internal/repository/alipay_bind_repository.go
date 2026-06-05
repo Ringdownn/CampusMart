@@ -30,8 +30,6 @@ func (r *AlipayBindRepository) Upsert(ctx context.Context, bind *model.AlipayAcc
 				"alipay_user_id":  bind.AlipayUserID,
 				"alipay_login_id": bind.AlipayLoginID,
 				"nickname":        bind.Nickname,
-				"access_token":    bind.AccessToken,
-				"refresh_token":   bind.RefreshToken,
 				"bind_time":       bind.BindTime,
 				"is_deleted":      0,
 				"update_time":     now,

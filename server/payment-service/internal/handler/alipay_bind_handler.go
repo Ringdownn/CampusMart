@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"campusmart/payment-service/internal/auth"
 	"campusmart/payment-service/internal/result"
 	"campusmart/payment-service/internal/service"
 	"github.com/gin-gonic/gin"
@@ -21,7 +20,7 @@ func NewAlipayBindHandler(svc *service.AlipayBindService, jwtSecret string) *Ali
 }
 
 func (h *AlipayBindHandler) BindMock(c *gin.Context) {
-	userID, ok := h.currentUserID(c)
+	userID, ok := currentUserID(c, h.jwtSecret)
 	if !ok {
 		return
 	}
@@ -45,7 +44,7 @@ func (h *AlipayBindHandler) BindMock(c *gin.Context) {
 }
 
 func (h *AlipayBindHandler) GetBind(c *gin.Context) {
-	userID, ok := h.currentUserID(c)
+	userID, ok := currentUserID(c, h.jwtSecret)
 	if !ok {
 		return
 	}
@@ -59,7 +58,7 @@ func (h *AlipayBindHandler) GetBind(c *gin.Context) {
 }
 
 func (h *AlipayBindHandler) Unbind(c *gin.Context) {
-	userID, ok := h.currentUserID(c)
+	userID, ok := currentUserID(c, h.jwtSecret)
 	if !ok {
 		return
 	}
@@ -84,13 +83,4 @@ func (h *AlipayBindHandler) InternalGetBind(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, result.OK(resp))
-}
-
-func (h *AlipayBindHandler) currentUserID(c *gin.Context) (int64, bool) {
-	userID, err := auth.CurrentUserID(c.Request, h.jwtSecret)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, result.Result[any]{Code: 201, Message: "未登录或登录已过期", Data: nil})
-		return 0, false
-	}
-	return userID, true
 }

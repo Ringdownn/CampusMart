@@ -74,6 +74,16 @@ type ClosePaymentResponse struct {
 	Status  string `json:"status"`
 }
 
+type PaymentPaidEvent struct {
+	EventID       string `json:"eventId"`
+	OrderID       int64  `json:"orderId"`
+	OrderNo       string `json:"orderNo"`
+	PayNo         string `json:"payNo"`
+	BuyerID       int64  `json:"buyerId"`
+	Amount        string `json:"amount"`
+	AlipayTradeNo string `json:"alipayTradeNo"`
+}
+
 type PaymentService struct {
 	paymentRepo *repository.PaymentRepository
 	bindRepo    *repository.AlipayBindRepository
@@ -233,14 +243,14 @@ func (s *PaymentService) ClosePayment(ctx context.Context, orderID int64) (*Clos
 
 func (s *PaymentService) createPaymentPaidOutbox(ctx context.Context, payment *model.Payment) error {
 	eventID := fmt.Sprintf("payment-paid-%s", payment.PayNo)
-	payload, err := json.Marshal(map[string]interface{}{
-		"eventId":       eventID,
-		"orderId":       payment.OrderID,
-		"orderNo":       payment.OrderNo,
-		"payNo":         payment.PayNo,
-		"buyerId":       payment.BuyerID,
-		"amount":        payment.Amount,
-		"alipayTradeNo": payment.AlipayTradeNo,
+	payload, err := json.Marshal(PaymentPaidEvent{
+		EventID:       eventID,
+		OrderID:       payment.OrderID,
+		OrderNo:       payment.OrderNo,
+		PayNo:         payment.PayNo,
+		BuyerID:       payment.BuyerID,
+		Amount:        payment.Amount,
+		AlipayTradeNo: payment.AlipayTradeNo,
 	})
 	if err != nil {
 		return err

@@ -7,7 +7,6 @@ const (
 	OrderStatusPaid      = "PAID"
 	OrderStatusSettled   = "SETTLED"
 	OrderStatusCancelled = "CANCELLED"
-	OrderStatusRefunded  = "REFUNDED"
 )
 
 type Order struct {

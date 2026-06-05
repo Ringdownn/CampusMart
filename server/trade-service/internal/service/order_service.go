@@ -51,7 +51,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, buyerID int64, req Creat
 
 	orderNo := newOrderNo()
 	payExpireAt := time.Now().Add(time.Duration(s.payTimeoutMinutes) * time.Minute)
-	order, err := s.repo.CreateWithGoodsLock(ctx, req.GoodsID, buyerID, payExpireAt, orderNo, "0.00")
+	order, err := s.repo.CreateWithGoodsLock(ctx, req.GoodsID, buyerID, payExpireAt, orderNo)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (s *OrderService) CancelOrder(ctx context.Context, currentUserID, orderID i
 	return updatedOrder, nil
 }
 
-func (s *OrderService) TimeoutCancel(ctx context.Context, orderID int64, orderNo string) error {
+func (s *OrderService) TimeoutCancel(ctx context.Context, orderID int64) error {
 	order, updated, err := s.repo.CancelCreated(ctx, orderID, "PAY_TIMEOUT")
 	if err != nil {
 		return err
@@ -150,14 +150,15 @@ func (s *OrderService) ConfirmReceipt(ctx context.Context, currentUserID, orderI
 		return nil, ErrOrderNotSettleable
 	}
 
-	payload, err := json.Marshal(map[string]interface{}{
-		"eventId":   "trade-order-settled-" + order.OrderNo,
-		"orderId":   order.ID,
-		"orderNo":   order.OrderNo,
-		"buyerId":   order.BuyerID,
-		"sellerId":  order.SellerID,
-		"amount":    order.Amount,
-		"settledAt": time.Now().Format("2006-01-02 15:04:05"),
+	now := time.Now()
+	payload, err := json.Marshal(OrderSettledEvent{
+		EventID:   "trade-order-settled-" + order.OrderNo,
+		OrderID:   order.ID,
+		OrderNo:   order.OrderNo,
+		BuyerID:   order.BuyerID,
+		SellerID:  order.SellerID,
+		Amount:    order.Amount,
+		SettledAt: now.Format("2006-01-02 15:04:05"),
 	})
 	if err != nil {
 		return nil, err
@@ -181,6 +182,16 @@ type PaymentPaidEvent struct {
 	BuyerID       int64  `json:"buyerId"`
 	Amount        string `json:"amount"`
 	AlipayTradeNo string `json:"alipayTradeNo"`
+}
+
+type OrderSettledEvent struct {
+	EventID   string `json:"eventId"`
+	OrderID   int64  `json:"orderId"`
+	OrderNo   string `json:"orderNo"`
+	BuyerID   int64  `json:"buyerId"`
+	SellerID  int64  `json:"sellerId"`
+	Amount    string `json:"amount"`
+	SettledAt string `json:"settledAt"`
 }
 
 func newOrderNo() string {

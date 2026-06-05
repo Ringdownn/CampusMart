@@ -19,7 +19,7 @@ func NewOrderRepository(db *gorm.DB) *OrderRepository {
 	return &OrderRepository{db: db}
 }
 
-func (r *OrderRepository) CreateWithGoodsLock(ctx context.Context, goodsID, buyerID int64, payExpireAt time.Time, orderNo, amount string) (*model.Order, error) {
+func (r *OrderRepository) CreateWithGoodsLock(ctx context.Context, goodsID, buyerID int64, payExpireAt time.Time, orderNo string) (*model.Order, error) {
 	var created *model.Order
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var goods model.Goods
@@ -100,13 +100,32 @@ func (r *OrderRepository) ListBySeller(ctx context.Context, sellerID int64) ([]m
 	return orders, err
 }
 
+func lockOrderForUpdate(tx *gorm.DB, orderID int64) (model.Order, error) {
+	var order model.Order
+	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("id = ? AND is_deleted = 0", orderID).
+		First(&order).Error
+	return order, err
+}
+
+func createOrderEvent(tx *gorm.DB, order model.Order, fromStatus, toStatus, eventType, eventBody string) error {
+	return tx.Create(&model.OrderEvent{
+		OrderID:    order.ID,
+		OrderNo:    order.OrderNo,
+		FromStatus: fromStatus,
+		ToStatus:   toStatus,
+		EventType:  eventType,
+		EventBody:  eventBody,
+	}).Error
+}
+
 func (r *OrderRepository) CancelCreated(ctx context.Context, orderID int64, reason string) (*model.Order, bool, error) {
 	var order model.Order
 	updated := false
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("id = ? AND is_deleted = 0", orderID).
-			First(&order).Error; err != nil {
+		var err error
+		order, err = lockOrderForUpdate(tx, orderID)
+		if err != nil {
 			return err
 		}
 		if order.Status != model.OrderStatusCreated {
@@ -126,14 +145,7 @@ func (r *OrderRepository) CancelCreated(ctx context.Context, orderID int64, reas
 		}
 		updated = result.RowsAffected == 1
 		if updated {
-			if err := tx.Create(&model.OrderEvent{
-				OrderID:    order.ID,
-				OrderNo:    order.OrderNo,
-				FromStatus: model.OrderStatusCreated,
-				ToStatus:   model.OrderStatusCancelled,
-				EventType:  "order.cancelled",
-				EventBody:  reason,
-			}).Error; err != nil {
+			if err := createOrderEvent(tx, order, model.OrderStatusCreated, model.OrderStatusCancelled, "order.cancelled", reason); err != nil {
 				return err
 			}
 			order.Status = model.OrderStatusCancelled
@@ -152,9 +164,9 @@ func (r *OrderRepository) MarkPaid(ctx context.Context, orderID int64, eventBody
 	var order model.Order
 	updated := false
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("id = ? AND is_deleted = 0", orderID).
-			First(&order).Error; err != nil {
+		var err error
+		order, err = lockOrderForUpdate(tx, orderID)
+		if err != nil {
 			return err
 		}
 		if order.Status != model.OrderStatusCreated {
@@ -173,14 +185,7 @@ func (r *OrderRepository) MarkPaid(ctx context.Context, orderID int64, eventBody
 		}
 		updated = result.RowsAffected == 1
 		if updated {
-			if err := tx.Create(&model.OrderEvent{
-				OrderID:    order.ID,
-				OrderNo:    order.OrderNo,
-				FromStatus: model.OrderStatusCreated,
-				ToStatus:   model.OrderStatusPaid,
-				EventType:  "payment.paid",
-				EventBody:  eventBody,
-			}).Error; err != nil {
+			if err := createOrderEvent(tx, order, model.OrderStatusCreated, model.OrderStatusPaid, "payment.paid", eventBody); err != nil {
 				return err
 			}
 			order.Status = model.OrderStatusPaid
@@ -198,9 +203,9 @@ func (r *OrderRepository) SettlePaid(ctx context.Context, orderID int64, payload
 	var order model.Order
 	updated := false
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("id = ? AND is_deleted = 0", orderID).
-			First(&order).Error; err != nil {
+		var err error
+		order, err = lockOrderForUpdate(tx, orderID)
+		if err != nil {
 			return err
 		}
 		if order.Status != model.OrderStatusPaid {
@@ -219,14 +224,7 @@ func (r *OrderRepository) SettlePaid(ctx context.Context, orderID int64, payload
 		}
 		updated = result.RowsAffected == 1
 		if updated {
-			if err := tx.Create(&model.OrderEvent{
-				OrderID:    order.ID,
-				OrderNo:    order.OrderNo,
-				FromStatus: model.OrderStatusPaid,
-				ToStatus:   model.OrderStatusSettled,
-				EventType:  "trade.order.settled",
-				EventBody:  payload,
-			}).Error; err != nil {
+			if err := createOrderEvent(tx, order, model.OrderStatusPaid, model.OrderStatusSettled, "trade.order.settled", payload); err != nil {
 				return err
 			}
 			if err := tx.Create(&model.TradeOutbox{

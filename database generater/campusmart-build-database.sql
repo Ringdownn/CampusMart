@@ -27,8 +27,6 @@ CREATE TABLE `alipay_account_binds` (
   `alipay_user_id` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `alipay_login_id` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `nickname` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `access_token` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `refresh_token` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `bind_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -97,7 +95,7 @@ CREATE TABLE `goods` (
   `price` bigint DEFAULT NULL,
   `publishTime` datetime DEFAULT NULL,
   PRIMARY KEY (`goodID`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=2006064601594097667 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
 -- Table structure for orders
@@ -171,12 +169,14 @@ CREATE TABLE `trade_outbox` (
 DROP TABLE IF EXISTS `message`;
 CREATE TABLE `message` (
   `messageID` bigint NOT NULL AUTO_INCREMENT,
-  `senderID` bigint DEFAULT NULL,
-  `receiverID` bigint DEFAULT NULL,
-  `message_content` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
-  `sendTime` datetime DEFAULT NULL,
-  PRIMARY KEY (`messageID`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=2006088217010401282 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
+  `senderID` bigint NOT NULL,
+  `receiverID` bigint NOT NULL,
+  `message_content` text CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `sendTime` datetime NOT NULL,
+  PRIMARY KEY (`messageID`) USING BTREE,
+  KEY `idx_sender_receiver_time` (`senderID`, `receiverID`, `sendTime`) USING BTREE,
+  KEY `idx_receiver_sender_time` (`receiverID`, `senderID`, `sendTime`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
 -- Table structure for user_wallets
@@ -227,7 +227,7 @@ CREATE TABLE `notification` (
   `notification_content` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL,
   `sendTime` datetime DEFAULT NULL,
   PRIMARY KEY (`notificationID`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
 -- Table structure for picture
@@ -239,7 +239,7 @@ CREATE TABLE `picture` (
   `goodID` bigint DEFAULT NULL COMMENT 'foreign key',
   `userID` bigint DEFAULT NULL,
   PRIMARY KEY (`pictureID`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
 -- Table structure for user
@@ -257,6 +257,6 @@ CREATE TABLE `user` (
   `studentID` bigint DEFAULT NULL,
   `avatarURL` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`userID`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=2006064223557283843 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 ROW_FORMAT=DYNAMIC;
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"campusmart/trade-service/internal/model"
 	"campusmart/trade-service/internal/repository"
 	"campusmart/trade-service/internal/service"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -23,6 +22,11 @@ const (
 	PaymentPaidQueue       = "campusmart.trade.payment.paid.queue"
 	OrderTimeoutRoutingKey = "trade.order.payment.timeout"
 )
+
+type paymentTimeoutEvent struct {
+	OrderID int64  `json:"orderId"`
+	OrderNo string `json:"orderNo"`
+}
 
 type Client struct {
 	conn   *amqp.Connection
@@ -92,7 +96,7 @@ func (c *Client) declare() error {
 }
 
 func (c *Client) PublishPaymentTimeout(ctx context.Context, orderID int64, orderNo string, delay time.Duration) error {
-	body, err := json.Marshal(map[string]interface{}{"orderId": orderID, "orderNo": orderNo})
+	body, err := json.Marshal(paymentTimeoutEvent{OrderID: orderID, OrderNo: orderNo})
 	if err != nil {
 		return err
 	}
@@ -128,15 +132,12 @@ func (c *Client) consumeTimeout(ctx context.Context, msgs <-chan amqp.Delivery, 
 			if !ok {
 				return
 			}
-			var body struct {
-				OrderID int64  `json:"orderId"`
-				OrderNo string `json:"orderNo"`
-			}
+			var body paymentTimeoutEvent
 			if err := json.Unmarshal(msg.Body, &body); err != nil {
 				_ = msg.Ack(false)
 				continue
 			}
-			if err := orderSvc.TimeoutCancel(ctx, body.OrderID, body.OrderNo); err != nil {
+			if err := orderSvc.TimeoutCancel(ctx, body.OrderID); err != nil {
 				c.logger.Printf("timeout cancel order %d failed: %v", body.OrderID, err)
 				_ = msg.Nack(false, true)
 				continue
@@ -221,4 +222,3 @@ func (d *OutboxDispatcher) dispatch(ctx context.Context) {
 }
 
 var _ service.TimeoutPublisher = (*Client)(nil)
-var _ = model.OrderStatusCreated

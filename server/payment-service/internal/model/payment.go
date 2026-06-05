@@ -3,11 +3,9 @@ package model
 import "time"
 
 const (
-	PaymentStatusWaitPay  = "WAIT_PAY"
-	PaymentStatusSuccess  = "SUCCESS"
-	PaymentStatusClosed   = "CLOSED"
-	PaymentStatusFailed   = "FAILED"
-	PaymentStatusRefunded = "REFUNDED"
+	PaymentStatusWaitPay = "WAIT_PAY"
+	PaymentStatusSuccess = "SUCCESS"
+	PaymentStatusClosed  = "CLOSED"
 
 	PaymentChannelAlipaySandbox = "ALIPAY_SANDBOX"
 )
