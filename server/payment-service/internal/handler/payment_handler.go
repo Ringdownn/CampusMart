@@ -68,37 +68,18 @@ func (h *PaymentHandler) BuildAlipayOrderString(c *gin.Context) {
 func (h *PaymentHandler) AlipayNotify(c *gin.Context) {
 	req, err := parseAlipayNotify(c)
 	if err != nil {
-		log.Printf("alipay notify parse failed remote=%s err=%v", c.ClientIP(), err)
+		log.Printf("alipay notify parse failed: %v", err)
 		c.String(http.StatusBadRequest, "failure")
 		return
 	}
-	log.Printf(
-		"alipay notify received remote=%s out_trade_no=%s trade_no=%s status=%s amount=%s app_id=%s params=%d",
-		c.ClientIP(),
-		req.OutTradeNo,
-		req.TradeNo,
-		req.TradeStatus,
-		req.TotalAmount,
-		req.AppID,
-		len(req.Params),
-	)
 
 	ok, err := h.svc.HandleAlipayNotify(c.Request.Context(), req)
 	if err != nil || !ok {
-		log.Printf(
-			"alipay notify rejected out_trade_no=%s trade_no=%s status=%s amount=%s app_id=%s ok=%t err=%v",
-			req.OutTradeNo,
-			req.TradeNo,
-			req.TradeStatus,
-			req.TotalAmount,
-			req.AppID,
-			ok,
-			err,
-		)
+		log.Printf("alipay notify failed: out_trade_no=%s err=%v", req.OutTradeNo, err)
 		c.String(http.StatusOK, "failure")
 		return
 	}
-	log.Printf("alipay notify accepted out_trade_no=%s trade_no=%s", req.OutTradeNo, req.TradeNo)
+	log.Printf("alipay notify success: out_trade_no=%s", req.OutTradeNo)
 	c.String(http.StatusOK, "success")
 }
 
