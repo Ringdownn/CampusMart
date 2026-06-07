@@ -63,9 +63,20 @@ public class GoodsController {
 
     @Operation(summary = "根据商品ID查询商品详情")
     @GetMapping("/selectById")
-    public Result<Goods> getGoodsById(@RequestParam Long id) {
+    public Result<GoodsVo> getGoodsById(@RequestParam Long id) {
         Goods goods = goodsService.getById(id);
-        return Result.ok(goods);
+        if (goods == null) {
+            return Result.ok(null);
+        }
+        GoodsVo goodsVo = new GoodsVo();
+        goodsVo.setGoodID(goods.getGoodID());
+        goodsVo.setPublishUserID(goods.getPublishUserID());
+        goodsVo.setTitle(goods.getTitle());
+        goodsVo.setAppearance(goods.getAppearance());
+        goodsVo.setItemDescription(goods.getItemDescription());
+        goodsVo.setPrice(goods.getPrice());
+        goodsVo.setPictureURL(goodsService.getGoodsPictureURL(id));
+        return Result.ok(goodsVo);
     }
 
     @Operation(summary = "添加商品")

@@ -15,6 +15,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.concurrent.ExecutionException;
+
 @Tag(name = "登录管理")
 @RestController
 @RequestMapping("/app")
@@ -24,6 +26,13 @@ public class LoginController {
 
     @Autowired
     private MediaUrlBuilder mediaUrlBuilder;
+
+    @GetMapping("login/getCode")
+    @Operation(summary = "获取短信验证码")
+    public Result getCode(@RequestParam String phone) throws ExecutionException, InterruptedException {
+        userService.getCode(phone);
+        return Result.ok();
+    }
 
     @Operation(summary = "用户登录")
     @PostMapping("/login")

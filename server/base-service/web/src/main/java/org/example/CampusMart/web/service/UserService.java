@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import org.example.CampusMart.web.vo.LoginVo;
 import org.example.CampusMart.web.vo.RegisterVo;
 
+import java.util.concurrent.ExecutionException;
+
 /**
 * @author a32271
 * @description 针对表【user】的数据库操作Service
@@ -15,4 +17,6 @@ public interface UserService extends IService<User> {
     boolean register(RegisterVo registerVo);
 
     String login(LoginVo loginVo);
+
+    void getCode(String phone) throws ExecutionException, InterruptedException;
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -198,6 +199,17 @@ func (s *PaymentService) HandleAlipayNotify(ctx context.Context, req AlipayNotif
 		return false, ErrAlipayConfig
 	}
 	if !s.alipay.VerifyNotify(req.Params) {
+		diag := s.alipay.VerifyNotifyDiagnostics(req.Params)
+		log.Printf(
+			"alipay notify verify failed out_trade_no=%s trade_no=%s exclude_sign_type=%t include_sign_type=%t sign_type=%s sign_len=%d params=%d",
+			req.OutTradeNo,
+			req.TradeNo,
+			diag.ExcludingSignType,
+			diag.IncludingSignType,
+			req.Params["sign_type"],
+			len(req.Params["sign"]),
+			len(req.Params),
+		)
 		return false, ErrInvalidPaymentParam
 	}
 

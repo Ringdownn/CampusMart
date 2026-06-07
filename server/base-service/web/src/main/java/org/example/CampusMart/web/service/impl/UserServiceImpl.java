@@ -2,12 +2,14 @@ package org.example.CampusMart.web.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.example.CampusMart.common.constant.RedisConstant;
 import org.example.CampusMart.common.exception.CampusMartException;
 import org.example.CampusMart.common.result.ResultCodeEnum;
 import org.example.CampusMart.common.utils.CodeUtil;
 import org.example.CampusMart.common.utils.JwtUtil;
 import org.example.CampusMart.model.entity.User;
 import org.example.CampusMart.web.service.PictureService;
+import org.example.CampusMart.web.service.SmsService;
 import org.example.CampusMart.web.service.UserService;
 import org.example.CampusMart.web.mapper.UserMapper;
 import org.example.CampusMart.web.vo.LoginVo;
@@ -16,12 +18,15 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
 * @author a32271
@@ -35,6 +40,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private SmsService smsService;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
     @Value("${minio.endpoint}")
     private String endpoint;
     @Autowired
@@ -42,6 +53,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Override
     public boolean register(RegisterVo registerVo) {
+        if(registerVo.getPhone()==null){
+            throw new CampusMartException(ResultCodeEnum.APP_LOGIN_PHONE_EMPTY);
+        }
+        if(registerVo.getCode()==null){
+            throw new CampusMartException(ResultCodeEnum.APP_LOGIN_CODE_EMPTY);
+        }
+
+        String key = RedisConstant.APP_LOGIN_PREFIX + registerVo.getPhone();
+        String code = stringRedisTemplate.opsForValue().get(key);
+        if(code==null){
+            throw new CampusMartException(ResultCodeEnum.APP_LOGIN_CODE_EXPIRED);
+        }
+        if(!code.equals(registerVo.getCode())){
+            throw new CampusMartException(ResultCodeEnum.APP_LOGIN_CODE_ERROR);
+        }
+
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getUsername, registerVo.getUsername());
         User user = userMapper.selectOne(queryWrapper);
@@ -87,6 +114,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
 
         return JwtUtil.createToken(user.getUserID(), user.getUsername());
+    }
+
+    @Override
+    public void getCode(String phone) throws ExecutionException, InterruptedException {
+        String code = CodeUtil.geyRandomCode(6);
+        String key = RedisConstant.APP_LOGIN_PREFIX + phone;
+
+        Boolean hasKey = stringRedisTemplate.hasKey(key);
+        if(Boolean.TRUE.equals(hasKey)){
+            Long ttl = stringRedisTemplate.getExpire(key, TimeUnit.SECONDS);
+            if(ttl != null && RedisConstant.APP_LOGIN_CODE_TTL_SEC - ttl < RedisConstant.APP_LOGIN_CODE_RESEND_TIME_SEC){
+                throw new CampusMartException(ResultCodeEnum.APP_SEND_SMS_TOO_OFTEN);
+            }
+        }
+
+        smsService.sendCode(phone,code);
+        stringRedisTemplate.opsForValue().set(key,code,RedisConstant.APP_LOGIN_CODE_TTL_SEC, TimeUnit.SECONDS);
     }
 }
 

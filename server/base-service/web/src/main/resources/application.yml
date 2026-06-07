@@ -28,6 +28,10 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
   cloud:
     nacos:
       discovery:
@@ -50,3 +54,12 @@ minio:
   access-key: ${MINIO_ACCESS_KEY:minioadmin}
   secret-key: ${MINIO_SECRET_KEY:minioadmin}
   bucket-name: ${MINIO_BUCKET_NAME:campusmart}
+
+aliyun:
+  sms:
+    access-key-id: ${ALIBABA_CLOUD_ACCESS_KEY_ID:}
+    access-key-secret: ${ALIBABA_CLOUD_ACCESS_KEY_SECRET:}
+    endpoint: ${ALIYUN_SMS_ENDPOINT:dypnsapi.aliyuncs.com}
+    region: ${ALIYUN_SMS_REGION:cn-shanghai}
+    sign-name: ${ALIYUN_SMS_SIGN_NAME:速通互联验证码}
+    template-code: ${ALIYUN_SMS_TEMPLATE_CODE:100001}

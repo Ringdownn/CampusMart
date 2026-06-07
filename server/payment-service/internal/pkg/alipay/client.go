@@ -107,12 +107,28 @@ func (c *Client) BuildAppPayOrder(order AppPayOrder) (string, error) {
 }
 
 func (c *Client) VerifyNotify(params map[string]string) bool {
+	return c.verifyNotify(params, "sign", "sign_type")
+}
+
+func (c *Client) VerifyNotifyDiagnostics(params map[string]string) NotifyVerifyDiagnostics {
+	return NotifyVerifyDiagnostics{
+		ExcludingSignType: c.verifyNotify(params, "sign", "sign_type"),
+		IncludingSignType: c.verifyNotify(params, "sign"),
+	}
+}
+
+type NotifyVerifyDiagnostics struct {
+	ExcludingSignType bool
+	IncludingSignType bool
+}
+
+func (c *Client) verifyNotify(params map[string]string, excluded ...string) bool {
 	sign := strings.TrimSpace(params["sign"])
 	if sign == "" || strings.TrimSpace(params["sign_type"]) != "RSA2" {
 		return false
 	}
 
-	source := signSource(params, "sign", "sign_type")
+	source := signSource(params, excluded...)
 	digest := sha256.Sum256([]byte(source))
 	signature, err := base64.StdEncoding.DecodeString(sign)
 	if err != nil {

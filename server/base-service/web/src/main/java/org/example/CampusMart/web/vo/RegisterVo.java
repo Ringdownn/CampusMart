@@ -20,5 +20,8 @@ public class RegisterVo {
 
     @Schema(description="student id")
     private Long studentID;
+
+    @Schema(description="sms verification code")
+    private String code;
 }
 
