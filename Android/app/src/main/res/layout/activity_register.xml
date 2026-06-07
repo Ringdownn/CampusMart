@@ -102,6 +102,7 @@
 
         <!-- verification code输入框 -->
         <EditText
+            android:id="@+id/et_verification_code"
             android:layout_width="0dp"
             android:layout_height="45dp"
             android:fontFamily="@font/ubuntu_m"
@@ -115,6 +116,7 @@
 
         <!-- send按钮 -->
         <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_send_code"
             android:layout_width="wrap_content"
             android:layout_height="45dp"
             android:fontFamily="@font/ubuntu_m"

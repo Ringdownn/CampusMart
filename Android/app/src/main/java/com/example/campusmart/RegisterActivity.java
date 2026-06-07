@@ -1,7 +1,9 @@
 package com.example.campusmart;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -22,15 +24,21 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class RegisterActivity extends AppCompatActivity {
+    private static final long SEND_CODE_COUNTDOWN_MILLIS = 60_000L;
+    private static final long COUNTDOWN_INTERVAL_MILLIS = 1_000L;
+    private static final String SEND_CODE_TEXT = "send";
 
     private EditText etSchoolName;
     private EditText etStudentId;
     private EditText etUsername;
     private EditText etPassword;
     private EditText etPhoneNumber;
+    private EditText etVerificationCode;
+    private AppCompatButton btnSendCode;
     private OkHttpClient client;
     private Gson gson;
     private String BASE_URL;
+    private CountDownTimer sendCodeTimer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,8 +50,10 @@ public class RegisterActivity extends AppCompatActivity {
         etUsername = findViewById(R.id.et_username);
         etPassword = findViewById(R.id.et_password);
         etPhoneNumber = findViewById(R.id.et_phone);
+        etVerificationCode = findViewById(R.id.et_verification_code);
 
         TextView tvLogin = findViewById(R.id.tv_login);
+        btnSendCode = findViewById(R.id.btn_send_code);
         AppCompatButton btnRegister = findViewById(R.id.btn_register);
 
         BASE_URL = getResources().getString(R.string.base_url);
@@ -56,6 +66,79 @@ public class RegisterActivity extends AppCompatActivity {
         });
 
         btnRegister.setOnClickListener(v -> register());
+        btnSendCode.setOnClickListener(v -> sendVerificationCode());
+    }
+
+    private void sendVerificationCode() {
+        String phoneNumber = normalizePhoneNumber(etPhoneNumber.getText().toString());
+        if (phoneNumber.isEmpty()) {
+            Toast.makeText(this, "Enter phone number", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!phoneNumber.matches("\\d{11}")) {
+            Toast.makeText(this, "Invalid phone number", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnSendCode.setEnabled(false);
+        btnSendCode.setText("sending");
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/app/login/getCode?phone=" + Uri.encode(phoneNumber))
+                .get()
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(() -> {
+                    btnSendCode.setEnabled(true);
+                    btnSendCode.setText(SEND_CODE_TEXT);
+                    Toast.makeText(RegisterActivity.this, "Send failed. Check network.", Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String responseData = response.body() != null ? response.body().string() : "";
+                Result<?> result = gson.fromJson(responseData, new TypeToken<Result<?>>(){}.getType());
+                runOnUiThread(() -> {
+                    if (response.isSuccessful() && result != null && result.getCode() == 200) {
+                        Toast.makeText(RegisterActivity.this, "Code sent", Toast.LENGTH_SHORT).show();
+                        startSendCodeCountdown();
+                    } else {
+                        btnSendCode.setEnabled(true);
+                        btnSendCode.setText(SEND_CODE_TEXT);
+                        Toast.makeText(RegisterActivity.this,
+                                result != null ? result.getMessage() : "Send failed",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
+    }
+
+    private void startSendCodeCountdown() {
+        if (sendCodeTimer != null) {
+            sendCodeTimer.cancel();
+        }
+
+        btnSendCode.setEnabled(false);
+        btnSendCode.setText((SEND_CODE_COUNTDOWN_MILLIS / 1000) + "s");
+        sendCodeTimer = new CountDownTimer(SEND_CODE_COUNTDOWN_MILLIS, COUNTDOWN_INTERVAL_MILLIS) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                long seconds = millisUntilFinished / 1000;
+                btnSendCode.setText(seconds + "s");
+            }
+
+            @Override
+            public void onFinish() {
+                btnSendCode.setEnabled(true);
+                btnSendCode.setText(SEND_CODE_TEXT);
+                sendCodeTimer = null;
+            }
+        };
+        sendCodeTimer.start();
     }
 
     private void register() {
@@ -63,11 +146,16 @@ public class RegisterActivity extends AppCompatActivity {
         String studentId = etStudentId.getText().toString().trim();
         String username = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
-        String phoneNumber = etPhoneNumber.getText().toString().trim();
+        String phoneNumber = normalizePhoneNumber(etPhoneNumber.getText().toString());
+        String verificationCode = etVerificationCode.getText().toString().trim();
 
         if (schoolName.isEmpty() || studentId.isEmpty() ||
-                username.isEmpty() || password.isEmpty() || phoneNumber.isEmpty()) {
-            Toast.makeText(this, "请填写完整信息", Toast.LENGTH_SHORT).show();
+                username.isEmpty() || password.isEmpty() || phoneNumber.isEmpty() || verificationCode.isEmpty()) {
+            Toast.makeText(this, "Fill in all fields", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!phoneNumber.matches("\\d{11}")) {
+            Toast.makeText(this, "Invalid phone number", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -77,6 +165,7 @@ public class RegisterActivity extends AppCompatActivity {
         registerVo.setUsername(username);
         registerVo.setPassword(password);
         registerVo.setPhone(Long.valueOf(phoneNumber));
+        registerVo.setCode(verificationCode);
 
         String registerUrl = BASE_URL + "/app/register";
         RequestBody requestBody = RequestBody.create(
@@ -93,7 +182,7 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call call, IOException e) {
                 runOnUiThread(() ->
-                        Toast.makeText(RegisterActivity.this, "网络请求失败", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(RegisterActivity.this, "Network error", Toast.LENGTH_SHORT).show()
                 );
             }
 
@@ -108,7 +197,7 @@ public class RegisterActivity extends AppCompatActivity {
 
                     runOnUiThread(() -> {
                         if (registerResult.getCode() == 200) {
-                            Toast.makeText(RegisterActivity.this, "注册成功", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(RegisterActivity.this, "Registered", Toast.LENGTH_SHORT).show();
                             startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
                             finish();
                         } else {
@@ -119,10 +208,35 @@ public class RegisterActivity extends AppCompatActivity {
                     });
                 } else {
                     runOnUiThread(() ->
-                            Toast.makeText(RegisterActivity.this, "注册失败", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(RegisterActivity.this, "Register failed", Toast.LENGTH_SHORT).show()
                     );
                 }
             }
         });
+    }
+
+    private String normalizePhoneNumber(String rawPhone) {
+        if (rawPhone == null) {
+            return "";
+        }
+        String phone = rawPhone.trim()
+                .replace(" ", "")
+                .replace("-", "");
+        if (phone.startsWith("+86") && phone.length() > 3) {
+            return phone.substring(3);
+        }
+        if (phone.startsWith("86") && phone.length() == 13) {
+            return phone.substring(2);
+        }
+        return phone;
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (sendCodeTimer != null) {
+            sendCodeTimer.cancel();
+            sendCodeTimer = null;
+        }
+        super.onDestroy();
     }
 }

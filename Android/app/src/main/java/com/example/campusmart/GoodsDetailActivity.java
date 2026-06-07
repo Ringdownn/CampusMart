@@ -101,7 +101,7 @@ public class GoodsDetailActivity extends AppCompatActivity {
         ivCollection.setOnClickListener(v -> toggleCollection());
         btnBuy.setOnClickListener(v -> {
             if (goods == null) {
-                Toast.makeText(this, "商品信息加载中，请稍后", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Loading item", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -110,7 +110,7 @@ public class GoodsDetailActivity extends AppCompatActivity {
             String selfAvatarUrl = ImageUrlUtils.normalize(this, sp.getString("avatar_url", ""));
 
             if (currentUserId <= 0 || token == null || token.isEmpty()) {
-                Toast.makeText(this, "请先登录", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Please log in", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -125,7 +125,7 @@ public class GoodsDetailActivity extends AppCompatActivity {
             intent.putExtra("otherUserId", sellerId);
             intent.putExtra("goodId", goodId);
             intent.putExtra("token", token);
-            intent.putExtra("otherNickname", sellerNickname != null ? sellerNickname : "卖家");
+            intent.putExtra("otherNickname", sellerNickname != null ? sellerNickname : "Seller");
             intent.putExtra("goodTitle", goods.getTitle() != null ? goods.getTitle() : "");
             intent.putExtra("selfAvatarUrl", selfAvatarUrl);
             intent.putExtra("otherAvatarUrl", otherAvatarUrl != null ? otherAvatarUrl : "");
@@ -328,7 +328,7 @@ public class GoodsDetailActivity extends AppCompatActivity {
      */
     private void toggleLike() {
         if (token == null || token.isEmpty()) {
-            Toast.makeText(this, "请先登录", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please log in", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -342,7 +342,7 @@ public class GoodsDetailActivity extends AppCompatActivity {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                runOnUiThread(() -> Toast.makeText(GoodsDetailActivity.this, "操作失败", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(GoodsDetailActivity.this, "Action failed", Toast.LENGTH_SHORT).show());
             }
 
             @Override
@@ -367,8 +367,7 @@ public class GoodsDetailActivity extends AppCompatActivity {
 
     private void updateLikeUI() {
         tvLikeCount.setText(String.valueOf(likeCount));
-        // 根据状态切换图标颜色（如果有选中/未选中图标资源可替换）
-        ivLike.setAlpha(isLiked ? 1.0f : 0.5f);
+        ivLike.setSelected(isLiked);
     }
 
     // ==================== 收藏功能 ====================
@@ -440,7 +439,7 @@ public class GoodsDetailActivity extends AppCompatActivity {
      */
     private void toggleCollection() {
         if (token == null || token.isEmpty()) {
-            Toast.makeText(this, "请先登录", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please log in", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -454,7 +453,7 @@ public class GoodsDetailActivity extends AppCompatActivity {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                runOnUiThread(() -> Toast.makeText(GoodsDetailActivity.this, "操作失败", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(GoodsDetailActivity.this, "Action failed", Toast.LENGTH_SHORT).show());
             }
 
             @Override
@@ -479,7 +478,7 @@ public class GoodsDetailActivity extends AppCompatActivity {
 
     private void updateCollectionUI() {
         tvCollectionCount.setText(String.valueOf(collectionCount));
-        ivCollection.setAlpha(isCollected ? 1.0f : 0.5f);
+        ivCollection.setSelected(isCollected);
     }
 
     private static class LikeResultVo {

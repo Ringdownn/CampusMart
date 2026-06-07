@@ -22,6 +22,7 @@ import com.example.campusmart.entity.Message;
 import com.example.campusmart.result.Result;
 import com.example.campusmart.util.AlipayPaymentHelper;
 import com.example.campusmart.util.ImageUrlUtils;
+import com.example.campusmart.util.OrderMessageNotifier;
 import com.example.campusmart.vo.MessageVo;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -78,6 +79,8 @@ public class ChatActivity extends AppCompatActivity {
     private String orderStatus;
     private WebSocket webSocket;
     private boolean webSocketConnected = false;
+    private boolean paymentNoticePending = false;
+    private boolean paymentNoticeSent = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -269,9 +272,11 @@ public class ChatActivity extends AppCompatActivity {
                     OrderInfo orderInfo = result != null ? result.getData() : null;
                     if (result != null && result.getCode() == 200 && orderInfo != null) {
                         runOnUiThread(() -> {
+                            String previousStatus = orderStatus;
                             orderId = orderInfo.orderId;
                             isBuyer = currentUserId.equals(orderInfo.buyerId);
                             updateGoodsActionUI(orderInfo.status);
+                            maybeNotifyPaymentSuccess(previousStatus, orderInfo.status);
                         });
                     } else if (allowSwap) {
                         requestLatestOrderStatus(sellerId, buyerId, false);
@@ -323,7 +328,7 @@ public class ChatActivity extends AppCompatActivity {
                     break;
             }
         } else {
-            // 卖家视角
+            // Seller视角
             switch (safeStatus) {
                 case "CREATED":
                     showStatusText("Waiting payment");
@@ -338,7 +343,7 @@ public class ChatActivity extends AppCompatActivity {
                     showStatusText("Order cancelled");
                     break;
                 default:
-                    // 无订单，卖家不显示按钮
+                    // 无订单，Seller不显示按钮
                     btnGoodsAction.setVisibility(Button.GONE);
                     tvGoodsStatus.setVisibility(TextView.GONE);
                     break;
@@ -388,7 +393,7 @@ public class ChatActivity extends AppCompatActivity {
             public void onFailure(Call call, IOException e) {
                 runOnUiThread(() -> {
                     updateGoodsActionUI(orderStatus);
-                    Toast.makeText(ChatActivity.this, "创建订单失败，请检查网络", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ChatActivity.this, "Create failed. Check network.", Toast.LENGTH_SHORT).show();
                 });
             }
 
@@ -402,11 +407,14 @@ public class ChatActivity extends AppCompatActivity {
                         OrderInfo order = result.getData();
                         orderId = order.orderId;
                         isBuyer = currentUserId.equals(order.buyerId);
+                        paymentNoticePending = false;
+                        paymentNoticeSent = false;
                         updateGoodsActionUI(order.status);
-                        Toast.makeText(ChatActivity.this, "订单创建成功，请继续支付", Toast.LENGTH_SHORT).show();
+                        notifySeller(OrderMessageNotifier.ORDER_CREATED_MESSAGE);
+                        Toast.makeText(ChatActivity.this, "Order created. Please pay.", Toast.LENGTH_SHORT).show();
                     } else {
                         updateGoodsActionUI(orderStatus);
-                        showError("Create Order Failed", result != null ? result.getMessage() : "服务器响应异常");
+                        showError("Create Order Failed", result != null ? result.getMessage() : "Server error");
                     }
                 });
             }
@@ -418,7 +426,7 @@ public class ChatActivity extends AppCompatActivity {
      */
     private void onPayClick() {
         if (!ensureBuyerActionReady() || orderId == null || orderId <= 0) {
-            Toast.makeText(this, "订单信息异常，请重新进入聊天页", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid order. Reopen chat.", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -435,7 +443,7 @@ public class ChatActivity extends AppCompatActivity {
             public void onFailure(Call call, IOException e) {
                 runOnUiThread(() -> {
                     updateGoodsActionUI(orderStatus);
-                    Toast.makeText(ChatActivity.this, "获取支付参数失败，请检查网络", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ChatActivity.this, "Payment failed. Check network.", Toast.LENGTH_SHORT).show();
                 });
             }
 
@@ -449,7 +457,7 @@ public class ChatActivity extends AppCompatActivity {
                         startAlipayPayment(result.getData());
                     } else {
                         updateGoodsActionUI(orderStatus);
-                        showError("Payment Failed", result != null ? result.getMessage() : "服务器响应异常");
+                        showError("Payment Failed", result != null ? result.getMessage() : "Server error");
                     }
                 });
             }
@@ -461,7 +469,7 @@ public class ChatActivity extends AppCompatActivity {
      */
     private void onConfirmReceiptClick() {
         if (!ensureBuyerActionReady() || orderId == null || orderId <= 0) {
-            Toast.makeText(this, "订单信息异常，请重新进入聊天页", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid order. Reopen chat.", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -476,13 +484,14 @@ public class ChatActivity extends AppCompatActivity {
     private void startAlipayPayment(PaymentInfo paymentInfo) {
         if (paymentInfo == null || paymentInfo.orderString == null || paymentInfo.orderString.trim().isEmpty()) {
             updateGoodsActionUI(orderStatus);
-            showError("Payment Failed", "支付参数不完整");
+            showError("Payment Failed", "Invalid payment info.");
             return;
         }
 
         setActionLoading("Opening Alipay...");
         AlipayPaymentHelper.pay(this, paymentInfo.orderString, payResult -> {
             if (payResult.isSuccess() || payResult.isProcessing()) {
+                paymentNoticePending = true;
                 Toast.makeText(ChatActivity.this, payResult.message(), Toast.LENGTH_SHORT).show();
                 btnGoodsAction.postDelayed(() -> ChatActivity.this.loadOrderStatus(), 1500);
                 btnGoodsAction.postDelayed(() -> ChatActivity.this.loadOrderStatus(), 3500);
@@ -511,7 +520,7 @@ public class ChatActivity extends AppCompatActivity {
             public void onFailure(Call call, IOException e) {
                 runOnUiThread(() -> {
                     updateGoodsActionUI(orderStatus);
-                    Toast.makeText(ChatActivity.this, "确认收货失败，请检查网络", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ChatActivity.this, "Confirm failed. Check network.", Toast.LENGTH_SHORT).show();
                 });
             }
 
@@ -525,10 +534,11 @@ public class ChatActivity extends AppCompatActivity {
                         OrderInfo order = result.getData();
                         orderId = order.orderId;
                         updateGoodsActionUI(order.status);
+                        notifySeller(OrderMessageNotifier.ORDER_RECEIVED_MESSAGE);
                         Toast.makeText(ChatActivity.this, "Receipt confirmed!", Toast.LENGTH_SHORT).show();
                     } else {
                         updateGoodsActionUI(orderStatus);
-                        showError("Confirm Receipt Failed", result != null ? result.getMessage() : "服务器响应异常");
+                        showError("Confirm Receipt Failed", result != null ? result.getMessage() : "Server error");
                     }
                 });
             }
@@ -537,11 +547,11 @@ public class ChatActivity extends AppCompatActivity {
 
     private boolean ensureBuyerActionReady() {
         if (!isBuyer) {
-            Toast.makeText(this, "卖家不能执行该操作", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Seller cannot do this.", Toast.LENGTH_SHORT).show();
             return false;
         }
         if (currentUserId == 0 || goodId == 0 || token == null || token.isEmpty()) {
-            Toast.makeText(this, "操作失败，参数异常", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid action.", Toast.LENGTH_SHORT).show();
             return false;
         }
         return true;
@@ -550,6 +560,32 @@ public class ChatActivity extends AppCompatActivity {
     private void setActionLoading(String text) {
         btnGoodsAction.setText(text);
         btnGoodsAction.setEnabled(false);
+    }
+
+    private void maybeNotifyPaymentSuccess(String previousStatus, String currentStatus) {
+        if (!paymentNoticePending || paymentNoticeSent || !isBuyer) {
+            return;
+        }
+        boolean wasUnpaid = previousStatus == null || "CREATED".equals(previousStatus);
+        boolean isPaid = "PAID".equals(currentStatus) || "SETTLED".equals(currentStatus);
+        if (wasUnpaid && isPaid) {
+            paymentNoticePending = false;
+            paymentNoticeSent = true;
+            notifySeller(OrderMessageNotifier.ORDER_PAID_MESSAGE);
+        }
+    }
+
+    private void notifySeller(String content) {
+        OrderMessageNotifier.notifySeller(
+                this,
+                client,
+                baseUrl,
+                token,
+                currentUserId,
+                otherUserId,
+                goodId,
+                content
+        );
     }
 
     private void showError(String title, String message) {
@@ -570,7 +606,7 @@ public class ChatActivity extends AppCompatActivity {
 
     private void loadChatHistory() {
         if (currentUserId == 0 || otherUserId == 0 || goodId == 0 || token == null || token.isEmpty()) {
-            Toast.makeText(this, "聊天参数异常", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid chat.", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -588,7 +624,7 @@ public class ChatActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call call, IOException e) {
                 runOnUiThread(() ->
-                        Toast.makeText(ChatActivity.this, "加载聊天记录失败，请检查网络", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(ChatActivity.this, "Load failed. Check network.", Toast.LENGTH_SHORT).show()
                 );
             }
 
@@ -605,12 +641,12 @@ public class ChatActivity extends AppCompatActivity {
                         if (result.getCode() == 200 && result.getData() != null) {
                             updateChatList(result.getData());
                         } else {
-                            Toast.makeText(ChatActivity.this, "获取聊天记录失败：" + result.getMessage(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ChatActivity.this, "Load failed: " + result.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     });
                 } else {
                     runOnUiThread(() ->
-                            Toast.makeText(ChatActivity.this, "服务器响应异常", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(ChatActivity.this, "Server error", Toast.LENGTH_SHORT).show()
                     );
                 }
             }
@@ -620,18 +656,18 @@ public class ChatActivity extends AppCompatActivity {
     private void sendMessage() {
         String content = etInput.getText().toString().trim();
         if (content.isEmpty()) {
-            Toast.makeText(this, "请输入消息内容", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Enter a message.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (currentUserId == 0 || otherUserId == 0 || goodId == 0 || token == null || token.isEmpty()) {
-            Toast.makeText(this, "发送失败，参数异常", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Send failed.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (webSocket == null || !webSocketConnected) {
             connectWebSocket();
-            Toast.makeText(this, "正在连接消息服务，请稍后重试", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Connecting. Try again.", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -646,7 +682,7 @@ public class ChatActivity extends AppCompatActivity {
         if (accepted) {
             etInput.setText("");
         } else {
-            Toast.makeText(this, "发送失败，消息连接不可用", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Not connected.", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -701,7 +737,7 @@ public class ChatActivity extends AppCompatActivity {
                 webSocketConnected = false;
                 if (!isFinishing()) {
                     runOnUiThread(() ->
-                            Toast.makeText(ChatActivity.this, "消息连接失败，请检查网络", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(ChatActivity.this, "Chat failed. Check network.", Toast.LENGTH_SHORT).show()
                     );
                 }
             }

@@ -264,10 +264,10 @@ public class HistoricalPurchaseActivity extends AppCompatActivity implements His
 
     private String displayStatus(String status) {
         if (OrderVo.STATUS_CREATED.equals(status)) {
-            return "Wait to pay";
+            return "To pay";
         }
         if (OrderVo.STATUS_PAID.equals(status)) {
-            return "Wait to receive";
+            return "To receive";
         }
         if (OrderVo.STATUS_SETTLED.equals(status)) {
             return "Successful";

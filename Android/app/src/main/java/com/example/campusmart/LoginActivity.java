@@ -102,7 +102,7 @@ public class LoginActivity extends AppCompatActivity {
                             new TypeToken<Result<String>>(){}.getType()
                     );
 
-                    if (loginResult.getCode() == 200) { // 成功状态码
+                    if (loginResult.getCode() == 200) { // Success状态码
                         String token = loginResult.getData();
                         // 获取用户信息
                         getUserInfo(token);

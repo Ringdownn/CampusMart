@@ -118,7 +118,7 @@ public class PersonalInfoActivity extends AppCompatActivity {
                 }
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
-                Toast.makeText(this, "图片获取失败", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Image load failed", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -159,7 +159,7 @@ public class PersonalInfoActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call call, IOException e) {
                 runOnUiThread(() ->
-                        Toast.makeText(PersonalInfoActivity.this, "头像上传失败", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(PersonalInfoActivity.this, "Avatar upload failed", Toast.LENGTH_SHORT).show()
                 );
             }
 
@@ -177,11 +177,11 @@ public class PersonalInfoActivity extends AppCompatActivity {
                         sp.edit().putString("avatar_url", ImageUrlUtils.normalize(PersonalInfoActivity.this, result.getData())).apply();
 
                         runOnUiThread(() ->
-                                Toast.makeText(PersonalInfoActivity.this, "头像更新成功", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(PersonalInfoActivity.this, "Avatar updated", Toast.LENGTH_SHORT).show()
                         );
                     } else {
                         runOnUiThread(() ->
-                                Toast.makeText(PersonalInfoActivity.this, "头像更新失败: " + result.getMessage(), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(PersonalInfoActivity.this, "Avatar update failed: " + result.getMessage(), Toast.LENGTH_SHORT).show()
                         );
                     }
                 }
@@ -196,7 +196,7 @@ public class PersonalInfoActivity extends AppCompatActivity {
         String email = etEmail.getText().toString().trim();
 
         if (nickname.isEmpty() || phone.isEmpty() || email.isEmpty()) {
-            Toast.makeText(this, "请完善必填信息", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Fill required fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -207,7 +207,7 @@ public class PersonalInfoActivity extends AppCompatActivity {
         try {
             user.setPhone(Long.parseLong(phone));
         } catch (NumberFormatException e) {
-            Toast.makeText(this, "手机号格式错误", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid phone number", Toast.LENGTH_SHORT).show();
             return;
         }
         user.setEmail(email);
@@ -227,7 +227,7 @@ public class PersonalInfoActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call call, IOException e) {
                 runOnUiThread(() ->
-                        Toast.makeText(PersonalInfoActivity.this, "信息保存失败", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(PersonalInfoActivity.this, "Save failed", Toast.LENGTH_SHORT).show()
                 );
             }
 
@@ -249,11 +249,11 @@ public class PersonalInfoActivity extends AppCompatActivity {
                         editor.apply();
 
                         runOnUiThread(() ->
-                                Toast.makeText(PersonalInfoActivity.this, "信息保存成功", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(PersonalInfoActivity.this, "Saved", Toast.LENGTH_SHORT).show()
                         );
                     } else {
                         runOnUiThread(() ->
-                                Toast.makeText(PersonalInfoActivity.this, "信息保存失败: " + result.getMessage(), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(PersonalInfoActivity.this, "Save failed: " + result.getMessage(), Toast.LENGTH_SHORT).show()
                         );
                     }
                 }

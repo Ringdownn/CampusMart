@@ -13,6 +13,8 @@ public class RegisterVo {
 
     private Long studentID;
 
+    private String code;
+
     public String getUsername() {
         return username;
     }
@@ -51,6 +53,14 @@ public class RegisterVo {
 
     public void setStudentID(Long studentID) {
         this.studentID = studentID;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 }
 

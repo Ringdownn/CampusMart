@@ -60,7 +60,7 @@ public class MessageFragment extends Fragment {
         if (userId != null && userId > 0 && token != null && !token.isEmpty()) {
             loadRecentChats();
         } else {
-            Toast.makeText(getContext(), "请先登录", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Please log in", Toast.LENGTH_SHORT).show();
         }
 
         return view;
@@ -84,9 +84,9 @@ public class MessageFragment extends Fragment {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                // 网络请求失败
+                // Network error
                 getActivity().runOnUiThread(() ->
-                        Toast.makeText(getContext(), "加载对话列表失败，请检查网络", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(getContext(), "Load failed. Check network.", Toast.LENGTH_SHORT).show()
                 );
             }
 
@@ -125,12 +125,12 @@ public class MessageFragment extends Fragment {
                                 startActivity(intent);
                             });
                         } else {
-                            Toast.makeText(getContext(), "获取数据失败：" + result.getMessage(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Load failed: " + result.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     });
                 } else {
                     getActivity().runOnUiThread(() ->
-                            Toast.makeText(getContext(), "服务器响应异常", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(getContext(), "Server error", Toast.LENGTH_SHORT).show()
                     );
                 }
             }

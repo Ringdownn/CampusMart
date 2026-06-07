@@ -20,6 +20,7 @@ import com.example.campusmart.entity.Goods;
 import com.example.campusmart.result.Result;
 import com.example.campusmart.util.AlipayPaymentHelper;
 import com.example.campusmart.util.ImageUrlUtils;
+import com.example.campusmart.util.OrderMessageNotifier;
 import com.example.campusmart.vo.OrderVo;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -45,7 +46,7 @@ public class OrderDetailActivity extends AppCompatActivity {
     private static final int COLOR_BLUE = Color.rgb(22, 135, 247);
     private static final int COLOR_PINK = Color.rgb(217, 54, 97);
     private static final int COLOR_GRAY = Color.rgb(108, 113, 117);
-    private static final int COLOR_LINE = Color.rgb(218, 218, 218);
+    private static final int COLOR_LINE = COLOR_GRAY;
     private static final long RECEIVE_DEADLINE_DAYS = 7;
     private static final int MAX_STATUS_REFRESH_ATTEMPTS = 4;
 
@@ -75,6 +76,8 @@ public class OrderDetailActivity extends AppCompatActivity {
     private Goods goods;
     private String cachedImageUrl;
     private int statusRefreshAttempts;
+    private boolean paymentNoticePending;
+    private boolean paymentNoticeSent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -208,6 +211,7 @@ public class OrderDetailActivity extends AppCompatActivity {
                     if (response.isSuccessful() && result != null && result.getCode() == 200 && result.getData() != null) {
                         order = result.getData();
                         renderOrder();
+						maybeNotifyPaymentSuccess();
                         loadGoods(order.getGoodsId());
                     } else {
                         showError("Load Order Failed", result != null ? result.getMessage() : "Server error: " + response.code());
@@ -285,8 +289,8 @@ public class OrderDetailActivity extends AppCompatActivity {
 
     private void renderCreated() {
         showStatusCopy(true);
-        tvOrderTitle.setText("Wait to pay");
-        tvOrderMessage.setText(isBuyer() ? "Please Pay Promptly!" : "Waiting for buyer payment.");
+        tvOrderTitle.setText("To pay");
+        tvOrderMessage.setText(isBuyer() ? "Please pay soon." : "Waiting for buyer payment.");
         renderSteps(2);
         startPaymentCountdown();
 
@@ -302,8 +306,8 @@ public class OrderDetailActivity extends AppCompatActivity {
 
     private void renderPaid() {
         showStatusCopy(true);
-        tvOrderTitle.setText("Wait to receive");
-        tvOrderMessage.setText(isBuyer() ? "Transaction successful, awaiting buyer's receipt!" : "Buyer has paid. Waiting for receipt confirmation.");
+        tvOrderTitle.setText("To receive");
+        tvOrderMessage.setText(isBuyer() ? "Paid. Waiting for receipt." : "Buyer has paid. Waiting for receipt confirmation.");
         renderSteps(3);
         startReceiveCountdown();
 
@@ -317,7 +321,7 @@ public class OrderDetailActivity extends AppCompatActivity {
 
     private void renderSettled() {
         showStatusCopy(false);
-        tvOrderTitle.setText("Payment Successful");
+        tvOrderTitle.setText("Payment done");
         renderSteps(4);
         showPrimaryAction("Historical Purchase", true);
         tvSecondaryAction.setVisibility(View.GONE);
@@ -325,7 +329,7 @@ public class OrderDetailActivity extends AppCompatActivity {
 
     private void renderCancelled() {
         showStatusCopy(true);
-        tvOrderTitle.setText("Order Cancelled");
+        tvOrderTitle.setText("Cancelled");
         tvOrderMessage.setText("This order has been cancelled.");
         tvOrderHint.setText(isEmpty(order.getCancelReason()) ? "You can place a new order from the product detail page." : "Reason: " + order.getCancelReason());
         renderSteps(1);
@@ -498,6 +502,7 @@ public class OrderDetailActivity extends AppCompatActivity {
         setActionLoading("Opening Alipay...");
         AlipayPaymentHelper.pay(this, paymentInfo.orderString, payResult -> {
             if (payResult.isSuccess() || payResult.isProcessing()) {
+                paymentNoticePending = true;
                 Toast.makeText(OrderDetailActivity.this, payResult.message(), Toast.LENGTH_SHORT).show();
                 refreshPaidStatusWithRetry();
             } else {
@@ -572,6 +577,7 @@ public class OrderDetailActivity extends AppCompatActivity {
                     if (response.isSuccessful() && result != null && result.getCode() == 200 && result.getData() != null) {
                         order = result.getData();
                         renderOrder();
+                        notifySeller(OrderMessageNotifier.ORDER_RECEIVED_MESSAGE);
                         Toast.makeText(OrderDetailActivity.this, "Receipt confirmed", Toast.LENGTH_SHORT).show();
                     } else {
                         renderOrder();
@@ -672,6 +678,34 @@ public class OrderDetailActivity extends AppCompatActivity {
 
     private boolean isBuyer() {
         return order != null && order.getBuyerId() != null && order.getBuyerId() == currentUserId;
+    }
+
+    private void maybeNotifyPaymentSuccess() {
+        if (!paymentNoticePending || paymentNoticeSent || order == null) {
+            return;
+        }
+        String status = safe(order.getStatus());
+        if (OrderVo.STATUS_PAID.equals(status) || OrderVo.STATUS_SETTLED.equals(status)) {
+            paymentNoticePending = false;
+            paymentNoticeSent = true;
+            notifySeller(OrderMessageNotifier.ORDER_PAID_MESSAGE);
+        }
+    }
+
+    private void notifySeller(String content) {
+        if (order == null) {
+            return;
+        }
+        OrderMessageNotifier.notifySeller(
+                this,
+                client,
+                baseUrl,
+                token,
+                order.getBuyerId(),
+                order.getSellerId(),
+                order.getGoodsId(),
+                content
+        );
     }
 
     private void loadGoodsImage(String rawUrl) {

@@ -68,7 +68,7 @@ public class UpdateActivity extends AppCompatActivity {
         userId = sp.getLong("user_id", 0);
 
         if (token.isEmpty() || userId == 0) {
-            Toast.makeText(this, "请先登录", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please log in", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -117,7 +117,7 @@ public class UpdateActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call call, IOException e) {
                 runOnUiThread(() ->
-                        Toast.makeText(UpdateActivity.this, "加载商品详情失败", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(UpdateActivity.this, "Load failed", Toast.LENGTH_SHORT).show()
                 );
             }
 
@@ -146,12 +146,12 @@ public class UpdateActivity extends AppCompatActivity {
                         });
                     } else {
                         runOnUiThread(() ->
-                                Toast.makeText(UpdateActivity.this, "加载商品详情失败", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(UpdateActivity.this, "Load failed", Toast.LENGTH_SHORT).show()
                         );
                     }
                 } else {
                     runOnUiThread(() ->
-                            Toast.makeText(UpdateActivity.this, "服务器错误", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(UpdateActivity.this, "Server error", Toast.LENGTH_SHORT).show()
                     );
                 }
             }
@@ -183,7 +183,7 @@ public class UpdateActivity extends AppCompatActivity {
         String desc = etDesc.getText().toString().trim();
 
         if (title.isEmpty() || appearance.isEmpty() || priceStr.isEmpty() || desc.isEmpty()) {
-            Toast.makeText(this, "请填写完整信息", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Fill in all fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -191,7 +191,7 @@ public class UpdateActivity extends AppCompatActivity {
         try {
             price = Long.parseLong(priceStr);
         } catch (NumberFormatException e) {
-            Toast.makeText(this, "价格格式错误", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid price", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -222,20 +222,20 @@ public class UpdateActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     if (isSuccess && uploadSuccess) {
                         Toast.makeText(UpdateActivity.this,
-                                goodId == 0 ? "发布成功" : "更新成功",
+                                goodId == 0 ? "Published" : "Updated",
                                 Toast.LENGTH_SHORT).show();
                         finish(); // 返回上一页
                     } else {
                         Toast.makeText(UpdateActivity.this,
-                                goodId == 0 ? "发布失败" : "更新失败",
+                                goodId == 0 ? "Publish failed" : "Update failed",
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
 
             } catch (Exception e) {
-                Log.e(TAG, "提交失败: " + e.getMessage());
+                Log.e(TAG, "Submit failed: " + e.getMessage());
                 runOnUiThread(() ->
-                        Toast.makeText(UpdateActivity.this, "网络请求失败", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(UpdateActivity.this, "Network error", Toast.LENGTH_SHORT).show()
                 );
             }
         }).start();
@@ -266,17 +266,17 @@ public class UpdateActivity extends AppCompatActivity {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new IOException("添加商品失败: " + response.code());
+                throw new IOException("Add item failed: " + response.code());
             }
 
             String responseData = response.body().string();
-            Log.d(TAG, "添加商品返回: " + responseData);
+            Log.d(TAG, "Add item response: " + responseData);
 
             Type type = new TypeToken<Result<Long>>(){}.getType();
             Result<Long> result = gson.fromJson(responseData, type);
 
             if (result.getCode() != 200) {
-                throw new IOException("添加商品失败: " + result.getMessage());
+                throw new IOException("Add item failed: " + result.getMessage());
             }
 
             Long goodsId = result.getData();
@@ -310,11 +310,11 @@ public class UpdateActivity extends AppCompatActivity {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new IOException("更新商品失败: " + response.code());
+                throw new IOException("Update item failed: " + response.code());
             }
 
             String responseData = response.body().string();
-            Log.d(TAG, "更新商品返回: " + responseData);
+            Log.d(TAG, "Update item response: " + responseData);
 
             Type type = new TypeToken<Result<Boolean>>(){}.getType();
             Result<Boolean> result = gson.fromJson(responseData, type);
@@ -342,11 +342,11 @@ public class UpdateActivity extends AppCompatActivity {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new IOException("图片上传失败: " + response.code());
+                throw new IOException("Upload failed: " + response.code());
             }
 
             String responseData = response.body().string();
-            Log.d(TAG, "图片上传返回: " + responseData);
+            Log.d(TAG, "Image upload response: " + responseData);
             return responseData.contains("\"code\":200");
         }
     }

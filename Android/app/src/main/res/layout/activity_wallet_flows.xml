@@ -7,25 +7,36 @@
 
     <LinearLayout
         android:id="@+id/layout_back"
-        android:layout_width="wrap_content"
-        android:layout_height="70dp"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="43dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="28dp"
-        android:paddingTop="32dp"
+        android:paddingStart="16dp"
         android:paddingEnd="16dp">
 
         <ImageView
             android:layout_width="16dp"
             android:layout_height="16dp"
+            android:layout_marginRight="5dp"
             android:src="@drawable/ic_back" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:fontFamily="@font/ubuntu_m"
+            android:text="back"
+            android:textColor="#111111"
+            android:textSize="18sp" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="158dp"
-        android:gravity="center"
+        android:layout_height="125dp"
+        android:gravity="top|center_horizontal"
         android:orientation="horizontal"
+        android:paddingTop="15dp"
         android:paddingHorizontal="34dp">
 
         <LinearLayout
@@ -64,7 +75,7 @@
                 android:id="@+id/tv_total_income"
                 android:layout_width="84dp"
                 android:layout_height="34dp"
-                android:layout_marginTop="18dp"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/bg_tag_selected"
                 android:fontFamily="@font/ubuntu_m"
                 android:gravity="center"
@@ -109,7 +120,7 @@
                 android:id="@+id/tv_total_withdraw"
                 android:layout_width="84dp"
                 android:layout_height="34dp"
-                android:layout_marginTop="18dp"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/bg_tag_selected"
                 android:fontFamily="@font/ubuntu_m"
                 android:gravity="center"

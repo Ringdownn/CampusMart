@@ -61,7 +61,7 @@ public class DetailInfoActivity extends AppCompatActivity {
 
         // 验证用户登录状态
         if (token.isEmpty() || userId == 0) {
-            Toast.makeText(this, "请先登录", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please log in", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -115,25 +115,25 @@ public class DetailInfoActivity extends AppCompatActivity {
         String priceStr = etPrice.getText().toString().trim();
         String desc = etDesc.getText().toString().trim();
         if (title.isEmpty() || appearance.isEmpty() || priceStr.isEmpty() || desc.isEmpty()) {
-            Toast.makeText(this, "请填写完整信息", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Fill in all fields", Toast.LENGTH_SHORT).show();
             return;
         }
         if (selectedImageUri == null) {
-            Toast.makeText(this, "请选择商品图片", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Select an image", Toast.LENGTH_SHORT).show();
             return;
         }
         long price;
         try {
             price = Long.parseLong(priceStr);
         } catch (NumberFormatException e) {
-            Toast.makeText(this, "价格格式错误", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid price", Toast.LENGTH_SHORT).show();
             return;
         }
         new Thread(() -> {
             try {
                 long goodsId = addGoods(title, appearance, desc, price, userId);
                 if (goodsId <= 0) {
-                    runOnUiThread(() -> Toast.makeText(DetailInfoActivity.this, "商品创建失败", Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> Toast.makeText(DetailInfoActivity.this, "Create failed", Toast.LENGTH_SHORT).show());
                     return;
                 }
 
@@ -142,16 +142,16 @@ public class DetailInfoActivity extends AppCompatActivity {
 
                 runOnUiThread(() -> {
                     if (uploadSuccess) {
-                        Toast.makeText(DetailInfoActivity.this, "发布成功", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(DetailInfoActivity.this, "Published", Toast.LENGTH_SHORT).show();
                         finish();
                     } else {
-                        Toast.makeText(DetailInfoActivity.this, "图片上传失败", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(DetailInfoActivity.this, "Upload failed", Toast.LENGTH_SHORT).show();
                     }
                 });
 
             } catch (Exception e) {
-                Log.e(TAG, "提交失败: " + e.getMessage());
-                runOnUiThread(() -> Toast.makeText(DetailInfoActivity.this, "网络请求失败", Toast.LENGTH_SHORT).show());
+                Log.e(TAG, "Submit failed: " + e.getMessage());
+                runOnUiThread(() -> Toast.makeText(DetailInfoActivity.this, "Network error", Toast.LENGTH_SHORT).show());
             }
         }).start();
     }
@@ -182,22 +182,22 @@ public class DetailInfoActivity extends AppCompatActivity {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new IOException("添加商品失败: " + response.code());
+                throw new IOException("Add item failed: " + response.code());
             }
 
             String responseData = response.body().string();
-            Log.d(TAG, "添加商品返回: " + responseData);
+            Log.d(TAG, "Add item response: " + responseData);
 
             Gson gson = new Gson();
             Result<Long> result = gson.fromJson(responseData, new com.google.gson.reflect.TypeToken<Result<Long>>(){}.getType());
 
             if (result.getCode() != 200) {
-                throw new IOException("添加商品失败: " + result.getMessage());
+                throw new IOException("Add item failed: " + result.getMessage());
             }
 
             Long goodsId = result.getData();
             if (goodsId == null) {
-                throw new IOException("返回商品ID为空");
+                throw new IOException("Missing item ID");
             }
             return goodsId;
         }
@@ -224,11 +224,11 @@ public class DetailInfoActivity extends AppCompatActivity {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new IOException("图片上传失败: " + response.code());
+                throw new IOException("Upload failed: " + response.code());
             }
 
             String responseData = response.body().string();
-            Log.d(TAG, "图片上传返回: " + responseData);
+            Log.d(TAG, "Image upload response: " + responseData);
             return responseData.contains("\"code\":200");
         }
     }
@@ -286,7 +286,7 @@ public class DetailInfoActivity extends AppCompatActivity {
         fos.flush();
         fos.close();
 
-        Log.d(TAG, "压缩后图片大小: " + compressedFile.length() + " bytes");
+        Log.d(TAG, "Compressed image size: " + compressedFile.length() + " bytes");
         return compressedFile;
     }
 
